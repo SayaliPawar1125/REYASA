@@ -1,0 +1,322 @@
+
+.reyasa-header {
+  position: relative;
+  height: 84px;
+  z-index: 1000;
+}
+
+.reyasa-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 84px;
+  background: #17251e;
+  color: #fff;
+  box-shadow: 0 3px 18px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+}
+
+.reyasa-nav-container {
+  min-height: 84px;
+  padding: 12px 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+/* LOGO AND BRAND */
+.reyasa-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.reyasa-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.reyasa-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reyasa-brand-name {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.1;
+}
+
+.reyasa-brand-tagline {
+  font-size: 9px;
+  letter-spacing: 1.1px;
+  color: #d3d8d1;
+  white-space: nowrap;
+}
+
+/* NAVIGATION LINKS */
+.reyasa-nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 24px;
+}
+
+.reyasa-nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  margin: 0 auto;
+}
+
+.reyasa-nav-link {
+  position: relative;
+  padding: 10px 0;
+  color: #f5f5f1;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.reyasa-nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #c9a96e;
+  transition: width 0.25s ease;
+}
+
+.reyasa-nav-link:hover,
+.reyasa-nav-link:focus-visible {
+  color: #e2c28a;
+}
+
+.reyasa-nav-link:hover::after,
+.reyasa-nav-link:focus-visible::after {
+  width: 100%;
+}
+
+/* CART AND ACCOUNT */
+.reyasa-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+/* FIX: CART LINK COLOR */
+.reyasa-header .reyasa-cart-link,
+.reyasa-header .reyasa-cart-link:link,
+.reyasa-header .reyasa-cart-link:visited,
+.reyasa-header .reyasa-cart-link:active {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+/* Cart icon */
+.reyasa-cart-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
+.reyasa-cart-icon i {
+  font-size: 24px;
+  color: inherit;
+}
+
+/* Cart hover color */
+.reyasa-header .reyasa-cart-link:hover,
+.reyasa-header .reyasa-cart-link:focus-visible {
+  color: #e2c28a !important;
+  text-decoration: none !important;
+}
+
+/* Cart quantity badge */
+.reyasa-cart-badge {
+  position: absolute;
+  top: -9px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #c9a96e;
+  color: #17251e !important;
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* LOGIN AND PROFILE */
+.reyasa-account-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.reyasa-account-link i {
+  font-size: 24px;
+}
+
+.reyasa-account-link:hover {
+  color: #e2c28a;
+}
+
+/* MOBILE MENU BUTTON */
+.reyasa-menu-toggle {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  color: #fff;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* TABLET AND MOBILE */
+@media (max-width: 991px) {
+  .reyasa-header {
+    height: 76px;
+  }
+
+  .reyasa-navbar {
+    min-height: 76px;
+    height: auto;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .reyasa-nav-container {
+    min-height: 76px;
+    flex-wrap: wrap;
+    padding: 10px 5%;
+    gap: 12px;
+  }
+
+  .reyasa-logo {
+    width: 46px;
+    height: 46px;
+  }
+
+  .reyasa-brand-name {
+    font-size: 22px;
+  }
+
+  .reyasa-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reyasa-nav-content {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 18px 0;
+    background: #17251e;
+  }
+
+  .reyasa-nav-content.open {
+    display: flex;
+  }
+
+  .reyasa-nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .reyasa-nav-link {
+    display: block;
+    padding: 12px 4px;
+  }
+
+  .reyasa-nav-link::after {
+    bottom: 0;
+  }
+
+  .reyasa-nav-actions {
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* SMALL MOBILE */
+@media (max-width: 480px) {
+  .reyasa-nav-container {
+    padding: 10px 4%;
+  }
+
+  .reyasa-brand {
+    gap: 8px;
+  }
+
+  .reyasa-logo {
+    width: 38px;
+    height: 38px;
+  }
+
+  .reyasa-brand-name {
+    font-size: 19px;
+    letter-spacing: 2px;
+  }
+
+  .reyasa-brand-tagline {
+    font-size: 7px;
+    letter-spacing: 0.6px;
+  }
+
+  .reyasa-menu-toggle {
+    font-size: 24px;
+    padding: 5px 8px;
+  }
+}
+
+/* ACCESSIBILITY */
+.reyasa-brand:focus-visible,
+.reyasa-menu-toggle:focus-visible,
+.reyasa-account-link:focus-visible,
+.reyasa-cart-link:focus-visible {
+  outline: 2px solid #e2c28a;
+  outline-offset: 4px;
+}

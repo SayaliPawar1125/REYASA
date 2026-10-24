@@ -1,0 +1,318 @@
+/* ==========================================================================
+   Hero Section Layout
+   ========================================================================== */
+.hero-section {
+  min-height: calc(100vh - 105px);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-overlay {
+  min-height: calc(100vh - 105px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 800px;
+  padding: 0 20px;
+  transform: translateX(-114px); /* Perfect left shift on desktop views */
+}
+
+/* ==========================================================================
+   Decorative Badge Component (Lines + Text + Icon)
+   ========================================================================== */
+.hero-badge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.hero-small-title {
+  color: #5b422b;
+  font-size: 16px;
+  letter-spacing: 5px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.hero-small-title::before,
+.hero-small-title::after {
+  content: "";
+  height: 1px;
+  width: 45px;
+  background-color: #bc7635;
+  margin: 0 20px;
+  display: inline-block;
+}
+
+.hero-icon-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: #5b422b;
+}
+
+.hero-icon-divider::before,
+.hero-icon-divider::after {
+  content: "";
+  height: 1px;
+  width: 30px;
+  background-color: #c5b4a4;
+  margin: 0 15px;
+  display: inline-block;
+}
+
+.leaf-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+/* ==========================================================================
+   Typography & Main Elements
+   ========================================================================== */
+.hero-title {
+  color: #392718;
+  font-family: Georgia, serif;
+  font-size: clamp(70px, 8vw, 125px);
+  letter-spacing: 16px;
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.hero-line {
+  width: 85px;
+  height: 4px;
+  background-color: #b5790b;
+  margin: 25px auto;
+}
+
+.hero-description {
+  color: #392718;
+  font-size: 23px;
+  line-height: 1.6;
+  margin-bottom: 35px;
+}
+
+/* ==========================================================================
+   Mobile Toggler Visibility Fix
+   ========================================================================== */
+.reyasa-navbar .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Turns the dark Bootstrap hamburger icon crisp white so it stands out */
+.reyasa-navbar .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://w3.org' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.85%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* ==========================================================================
+   Trending Shirts Section (Base & Elevated Shadow Cards)
+   ========================================================================== */
+.trending-main-title {
+  color: #392718;
+  font-family: Georgia, serif;
+  font-size: 28px;
+}
+
+.trending-scroll-container {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom minimal scrollbar styling track */
+.trending-scroll-container::-webkit-scrollbar {
+  height: 5px;
+}
+
+.trending-scroll-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.trending-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(188, 118, 53, 0.2);
+  border-radius: 4px;
+}
+
+/* Visible Scrollbar Variant */
+.trending-scroll-container.visible-scrollbar {
+  overflow-x: auto !important;
+  scrollbar-width: auto !important;
+}
+
+.trending-scroll-container.visible-scrollbar::-webkit-scrollbar {
+  height: 6px;
+  display: block !important;
+}
+
+.trending-scroll-container.visible-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+}
+
+.trending-scroll-container.visible-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(188, 118, 53, 0.3);
+  border-radius: 10px;
+}
+
+/* Product Card Configurations */
+.trending-card {
+  width: calc(25% - 18px);
+  min-width: 265px;
+  scroll-snap-align: start;
+  background-color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12), 0 2px 5px rgba(0, 0, 0, 0.06) !important;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease;
+}
+
+/* Deeper Interactive Hover Transformation shadow profile */
+.trending-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 30px rgba(57, 39, 24, 0.22), 0 6px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.image-wrapper {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.trending-img {
+  height: 330px;
+  transition: transform 0.5s ease;
+}
+
+.trending-card:hover .trending-img {
+  transform: scale(1.04);
+}
+
+.custom-cart-btn {
+  border-color: #392718;
+  color: #392718;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.custom-cart-btn:hover {
+  background-color: #392718;
+  border-color: #392718;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Responsive Viewport Breakpoints
+   ========================================================================== */
+@media (max-width: 992px) {
+  .trending-card {
+    width: calc(50% - 12px);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-content {
+    transform: translateX(0); /* Completely resets the left-shift on mobile screens */
+    padding: 40px 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-section {
+    min-height: calc(100vh - 80px);
+    background-position: center;
+  }
+
+  .hero-small-title {
+    font-size: 12px;
+    letter-spacing: 3px;
+  }
+
+  .hero-small-title::before,
+  .hero-small-title::after {
+    width: 20px;
+    margin: 0 10px;
+  }
+
+  .hero-icon-divider::before,
+  .hero-icon-divider::after {
+    width: 12px;
+    margin: 0 8px;
+  }
+
+  .hero-title {
+    font-size: 48px;
+    letter-spacing: 6px;
+  }
+
+  .hero-description {
+    font-size: 16px;
+  }
+
+  .registration-btn {
+    min-width: 100%;
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+
+  .trending-card {
+    width: 82%;
+  }
+
+  .trending-img {
+    height: 295px;
+  }
+}
+/* ==========================================================================
+   Artisan Video Showcase Layout (Responsive Fluid Sizing)
+   ========================================================================== */
+.video-showcase-section {
+  width: 100%;
+  /* Creates a modern fluid wide cinematic frame relative to viewport width */
+  aspect-ratio: 21 / 9; 
+  min-height: 250px; /* Safeguards mobile heights from becoming too narrow */
+  background-color: #392718;
+}
+
+.video-overlay-tint {
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.5));
+}
+
+.video-overlay-tint h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(1.5rem, 4vw, 2.5rem); /* Dynamically shrinks font precisely by device viewport */
+  letter-spacing: 4px;
+}
+
+.video-overlay-tint span {
+  letter-spacing: 6px;
+  font-size: clamp(10px, 1.5vw, 13px); /* Fluid helper labels */
+}
+
+/* Specific micro adjustments for small smart displays */
+@media (max-width: 576px) {
+  .video-showcase-section {
+    aspect-ratio: 16 / 9; /* Slightly taller aspect grid frame on phones for a better portrait user profile scan view */
+  }
+  .video-overlay-tint h2 {
+    letter-spacing: 2px;
+  }
+}
