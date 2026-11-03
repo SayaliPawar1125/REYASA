@@ -1,5 +1,7 @@
-
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+
 import heroBackground from "../assets/reyasa-background.png";
 import "./Home.css";
 import CartServices from "../services/CartServices";
@@ -8,6 +10,7 @@ import ManageProductServices from "../services/ManageProductServices";
 const API_URL = "http://localhost:8080";
 
 function Home() {
+  const navigate = useNavigate();
   const scrollRef = useRef(null);
 
   const [homepageVideos, setHomepageVideos] = useState([]);
@@ -21,6 +24,7 @@ function Home() {
   const [cartMessage, setCartMessage] = useState("");
   const [cartMessageType, setCartMessageType] = useState("info");
   const [addingProductId, setAddingProductId] = useState(null);
+  const [showCartToast, setShowCartToast] = useState(false);
 
   // Convert available sizes into an array.
   const getAvailableSizes = (availableSizes) => {
@@ -62,8 +66,63 @@ function Home() {
     return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
+  // Navigate to the selected product details page.
+  const handleViewProduct = (productId) => {
+    if (!productId) {
+      console.error("Product ID is missing.");
+      return;
+    }
+
+    navigate(`/product/${productId}`);
+  };
+
+  // Display the REYASA login popup.
+  const showLoginPopup = async () => {
+    const result = await Swal.fire({
+      title: "Login to REYASA",
+
+      html: `
+        <div class="reyasa-login-content">
+          <div class="reyasa-login-icon">
+            <i class="bi bi-bag-heart-fill"></i>
+          </div>
+
+          <p class="reyasa-login-tagline">
+            Your style journey starts here!
+          </p>
+
+          <p class="reyasa-login-description">
+            Please log in to your REYASA account to add
+            your favourite products to the cart.
+          </p>
+        </div>
+      `,
+
+      showCancelButton: false,
+
+      confirmButtonText:
+        '<i class="bi bi-box-arrow-in-right me-2"></i>Login Now',
+
+      confirmButtonColor: "#800000",
+
+      customClass: {
+        popup: "reyasa-popup",
+        title: "reyasa-popup-title",
+        htmlContainer: "reyasa-popup-message",
+        confirmButton: "reyasa-popup-button",
+      },
+
+      buttonsStyling: true,
+      allowOutsideClick: true,
+      allowEscapeKey: true,
+    });
+
+    if (result.isConfirmed) {
+      navigate("/login");
+    }
+  };
+
   // Load only active videos uploaded by the admin.
-  // No local or hardcoded video is used.
   const loadHomepageVideos = async () => {
     try {
       setVideosLoading(true);
@@ -148,6 +207,18 @@ function Home() {
     loadTrendingProducts();
   }, []);
 
+  // Automatically hide the cart success popup after 3 seconds.
+  useEffect(() => {
+    if (!showCartToast) return;
+
+    const timer = setTimeout(() => {
+      setShowCartToast(false);
+      setCartMessage("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [showCartToast]);
+
   // Change the selected shirt size.
   const handleSizeChange = (productId, size) => {
     setSelectedSizes((previous) => ({
@@ -156,18 +227,29 @@ function Home() {
     }));
   };
 
+  // Display the small success popup.
+  const showCartSuccessToast = (message) => {
+    setCartMessage(message);
+    setCartMessageType("success");
+    setShowCartToast(true);
+  };
+
   // Add a shirt to the logged-in customer's cart.
   const handleAddToCart = async (product) => {
+    setShowCartToast(false);
     setCartMessage("");
 
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
-    if (!token || !userId) {
-      setCartMessageType("warning");
-      setCartMessage(
-        "Please login before adding products to your cart."
-      );
+    // Show popup when the customer is not logged in.
+    if (
+      !token ||
+      !userId ||
+      userId === "undefined" ||
+      userId === "null"
+    ) {
+      await showLoginPopup();
       return;
     }
 
@@ -200,12 +282,11 @@ function Home() {
         1
       );
 
-      setCartMessageType("success");
-      setCartMessage(
-        `${product.name} (${size}) added to your cart successfully.`
-      );
-
       window.dispatchEvent(new Event("cartUpdated"));
+
+      showCartSuccessToast(
+        `${product.name} (${size}) added to cart successfully.`
+      );
     } catch (error) {
       console.error(
         "Unable to add product to cart:",
@@ -230,9 +311,11 @@ function Home() {
       } else {
         setCartMessageType("danger");
         setCartMessage(
-          responseData?.message ||
-            responseData?.error ||
-            "Unable to add product to cart. Please try again."
+          typeof responseData === "string"
+            ? responseData
+            : responseData?.message ||
+                responseData?.error ||
+                "Unable to add product to cart. Please try again."
         );
       }
     } finally {
@@ -323,59 +406,59 @@ function Home() {
         </div>
       </section>
 
-       
-{/* ADMIN-UPLOADED HOMEPAGE VIDEO ONLY */}
-{!videosLoading && homepageVideos.length > 0 && (
-  <section className="container-fluid px-0 py-4">
-    {(() => {
-      const video = homepageVideos[0];
+      {/* ADMIN-UPLOADED HOMEPAGE VIDEO ONLY */}
+      {!videosLoading && homepageVideos.length > 0 && (
+        <section className="container-fluid px-0 py-4">
+          {(() => {
+            const video = homepageVideos[0];
 
-      const videoUrl = getMediaUrl(video.videoUrl);
+            const videoUrl = getMediaUrl(video.videoUrl);
 
-      const posterUrl = video.posterImageUrl
-        ? getMediaUrl(video.posterImageUrl)
-        : undefined;
+            const posterUrl = video.posterImageUrl
+              ? getMediaUrl(video.posterImageUrl)
+              : undefined;
 
-      return (
-        <div key={video.id}>
-          <video
-            className="w-100 d-block"
-            src={videoUrl}
-            poster={posterUrl}
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls
-            preload="metadata"
-            style={{
-              width: "100%",
-              height: "70vh",
-              maxHeight: "600px",
-              minHeight: "300px",
-              objectFit: "cover",
-            }}
-          >
-            Your browser does not support HTML video.
-          </video>
+            return (
+              <div key={video.id}>
+                <video
+                  className="w-100 d-block"
+                  src={videoUrl}
+                  poster={posterUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  preload="metadata"
+                  style={{
+                    width: "100%",
+                    height: "70vh",
+                    maxHeight: "600px",
+                    minHeight: "300px",
+                    objectFit: "cover",
+                  }}
+                >
+                  Your browser does not support HTML video.
+                </video>
 
-          <div className="container text-center py-3">
-            {video.title && (
-              <h3 className="fw-bold">{video.title}</h3>
-            )}
+                <div className="container text-center py-3">
+                  {video.title && (
+                    <h3 className="fw-bold">
+                      {video.title}
+                    </h3>
+                  )}
 
-            {video.description && (
-              <p className="text-muted mb-0">
-                {video.description}
-              </p>
-            )}
-          </div>
-        </div>
-      );
-    })()}
-  </section>
-)}
-
+                  {video.description && (
+                    <p className="text-muted mb-0">
+                      {video.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </section>
+      )}
 
       {/* TRENDING SHIRTS */}
       <section className="trending-section py-5 bg-white">
@@ -402,14 +485,30 @@ function Home() {
             >
               <i className="bi bi-arrow-clockwise me-1"></i>
 
-              {loadingProducts
-                ? "Refreshing..."
-                : "Refresh"}
+              {loadingProducts ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
-          {/* CART STATUS MESSAGE */}
-          {cartMessage && (
+          {/* SMALL CART SUCCESS POPUP */}
+          {showCartToast && cartMessageType === "success" && (
+            <div
+              className="reyasa-cart-toast"
+              role="status"
+              aria-live="polite"
+            >
+              <i
+                className="bi bi-check-circle-fill reyasa-cart-toast-icon"
+                aria-hidden="true"
+              ></i>
+
+              <p className="reyasa-cart-toast-message">
+                {cartMessage}
+              </p>
+            </div>
+          )}
+
+          {/* OTHER CART MESSAGES */}
+          {cartMessage && cartMessageType !== "success" && (
             <div
               className={`alert alert-${cartMessageType} alert-dismissible fade show`}
               role="alert"
@@ -506,6 +605,22 @@ function Home() {
                     <div
                       key={product.id}
                       className="trending-card card border-0 flex-shrink-0 rounded-3"
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`View ${product.name} details`}
+                      onClick={() =>
+                        handleViewProduct(product.id)
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" ||
+                          event.key === " "
+                        ) {
+                          event.preventDefault();
+                          handleViewProduct(product.id);
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
                     >
                       {/* PRODUCT IMAGE */}
                       <div className="overflow-hidden position-relative image-wrapper">
@@ -558,7 +673,15 @@ function Home() {
                         )}
 
                         {/* SIZE SELECTOR */}
-                        <div className="mb-3">
+                        <div
+                          className="mb-3"
+                          onClick={(event) =>
+                            event.stopPropagation()
+                          }
+                          onKeyDown={(event) =>
+                            event.stopPropagation()
+                          }
+                        >
                           <label
                             htmlFor={`home-size-${product.id}`}
                             className="form-label small fw-semibold mb-1"
@@ -609,9 +732,10 @@ function Home() {
                           <button
                             type="button"
                             className="btn btn-outline-dark btn-sm custom-cart-btn px-3"
-                            onClick={() =>
-                              handleAddToCart(product)
-                            }
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleAddToCart(product);
+                            }}
                             disabled={
                               addingProductId === product.id ||
                               outOfStock ||

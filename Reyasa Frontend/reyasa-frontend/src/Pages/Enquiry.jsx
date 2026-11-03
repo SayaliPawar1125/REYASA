@@ -1,8 +1,10 @@
-
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import EnquiryServices from "../services/EnquiryService";
 import heroBackground from "../assets/reyasa-background.png";
+
+const MAROON = "#800000";
 
 function Enquiry() {
   const [searchParams] = useSearchParams();
@@ -16,8 +18,6 @@ function Enquiry() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -26,26 +26,39 @@ function Enquiry() {
       ...previous,
       [name]: value,
     }));
-
-    setError("");
-    setSuccess("");
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (loading) return;
+
     setLoading(true);
-    setError("");
-    setSuccess("");
 
     try {
-      const response =
-        await EnquiryServices.submitEnquiry(formData);
+      const response = await EnquiryServices.submitEnquiry(formData);
 
-      setSuccess(
-        response.data?.message ||
-          "Your enquiry has been submitted successfully."
-      );
+      await Swal.fire({
+        icon: "success",
+        title: "Thank You!",
+        text:
+          response.data?.message ||
+          "Your enquiry has been submitted successfully. Our REYASA team will get back to you.",
+        confirmButtonText: "Continue Shopping",
+        confirmButtonColor: MAROON,
+        background: "#fffaf7",
+        color: "#252525",
+        width: "420px",
+        padding: "2.5rem 2rem",
+        customClass: {
+          popup: "reyasa-popup",
+          title: "reyasa-popup-title",
+          htmlContainer: "reyasa-popup-message",
+          confirmButton: "reyasa-popup-button",
+        },
+        buttonsStyling: true,
+        allowOutsideClick: false,
+      });
 
       setFormData({
         productName: "",
@@ -55,96 +68,129 @@ function Enquiry() {
         message: "",
       });
     } catch (err) {
-      const validationErrors = err.response?.data?.errors;
+      const responseData = err.response?.data;
+      const validationErrors = responseData?.errors;
 
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.message ||
-          (validationErrors
-            ? Object.values(validationErrors).join(", ")
-            : "") ||
-          "Unable to submit your enquiry. Please try again."
-      );
+      const errorMessage =
+        responseData?.detail ||
+        responseData?.message ||
+        responseData?.error ||
+        (validationErrors
+          ? Object.values(validationErrors).join(", ")
+          : "") ||
+        "We couldn't submit your enquiry right now. Please try again.";
+
+      await Swal.fire({
+        icon: "error",
+        title: "Oops! Something Went Wrong",
+        text: errorMessage,
+        confirmButtonText: "Try Again",
+        confirmButtonColor: MAROON,
+        background: "#fffaf7",
+        color: "#252525",
+        width: "420px",
+        padding: "2.5rem 2rem",
+        customClass: {
+          popup: "reyasa-popup",
+          title: "reyasa-popup-title",
+          htmlContainer: "reyasa-popup-message",
+          confirmButton: "reyasa-popup-button",
+        },
+        buttonsStyling: true,
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main
-      className="position-relative py-5"
+    <section
+      className="min-vh-100 pb-4"
       style={{
         backgroundImage: `url(${heroBackground})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-        minHeight: "100vh",
-      }}
+        backgroundAttachment: "scroll",
+        paddingTop: "70px",      }}
     >
-      <div className="container position-relative py-3 py-lg-5">
-        {/* PAGE HEADING */}
-        <div className="text-center mb-5">
-          <p className="text-uppercase fw-semibold small mb-3">
-            REYASA | Created with passion. Worn with love.
-          </p>
+      <div className="container">
 
-          <h1 className="display-4 fw-bold mb-3">
-            We're Here to Help
+        {/* PAGE HEADING */}
+        <div className="mb-3">
+          <h1
+            className="fw-bold mb-2"
+            style={{
+              color: MAROON,
+              fontSize: "clamp(2rem, 4vw, 2.7rem)",
+              textShadow: "0 1px 2px rgba(255,255,255,0.5)",
+            }}
+          >
+            <i className="bi bi-envelope-paper me-2"></i>
+            Contact &amp; Enquiries
           </h1>
 
-          <p className="lead mb-0">
-            Your questions matter to us. Let's connect.
+          <p
+            className="fw-semibold mb-0"
+            style={{
+              color: MAROON,
+              fontSize: "1rem",
+            }}
+          >
+            Have a question about REYASA? We're here to help.
           </p>
         </div>
 
-        {/* INFORMATION AND ENQUIRY CARDS */}
-        <div className="row justify-content-center g-4">
+        {/* INFORMATION AND FORM CARDS */}
+        <div className="row justify-content-center g-3">
+
           {/* LEFT INFORMATION CARD */}
-          <div className="col-12 col-lg-4">
-            <div className="card h-100 border-0 shadow-lg rounded-4">
-              <div className="card-body p-4 p-xl-5">
+          <div className="col-12 col-md-5 col-lg-4">
+            <div className="card h-100 border-0 shadow rounded-3">
+              <div className="card-body p-3 p-lg-4">
+
                 <span className="badge rounded-pill text-bg-dark mb-3 px-3 py-2">
                   CUSTOMER SUPPORT
                 </span>
 
-                <h2 className="h3 fw-bold mb-3">
+                <h2 className="h4 fw-bold mb-3">
                   Let's Talk
                 </h2>
 
-                <p className="text-secondary mb-4">
+                <p className="text-secondary small mb-3">
                   Need help with your favourite shirt, sizing,
                   product details, or a limited-edition collection?
                   Send your question to the REYASA team.
                 </p>
 
-                <hr className="my-4" />
+                <hr className="my-3" />
 
-                <div className="d-flex align-items-start gap-3 mb-4">
-                  <div className="bg-light rounded-3 p-3 flex-shrink-0">
-                    <i className="bi bi-chat-dots fs-4"></i>
+                <div className="d-flex align-items-start gap-3 mb-3">
+                  <div className="bg-light rounded-3 p-2 flex-shrink-0">
+                    <i className="bi bi-chat-dots fs-5"></i>
                   </div>
 
                   <div>
-                    <h3 className="h6 fw-bold mb-2">
+                    <h3 className="h6 fw-bold mb-1">
                       Product Enquiries
                     </h3>
+
                     <p className="text-secondary small mb-0">
-                      Ask about shirts, sizes, prices, and
-                      collections.
+                      Ask about shirts, sizes, prices, and collections.
                     </p>
                   </div>
                 </div>
 
-                <div className="d-flex align-items-start gap-3 mb-4">
-                  <div className="bg-light rounded-3 p-3 flex-shrink-0">
-                    <i className="bi bi-person-check fs-4"></i>
+                <div className="d-flex align-items-start gap-3 mb-3">
+                  <div className="bg-light rounded-3 p-2 flex-shrink-0">
+                    <i className="bi bi-person-check fs-5"></i>
                   </div>
 
                   <div>
-                    <h3 className="h6 fw-bold mb-2">
+                    <h3 className="h6 fw-bold mb-1">
                       Customer Assistance
                     </h3>
+
                     <p className="text-secondary small mb-0">
                       Tell us about your question or concern.
                     </p>
@@ -152,78 +198,63 @@ function Enquiry() {
                 </div>
 
                 <div className="d-flex align-items-start gap-3">
-                  <div className="bg-light rounded-3 p-3 flex-shrink-0">
-                    <i className="bi bi-envelope-paper fs-4"></i>
+                  <div className="bg-light rounded-3 p-2 flex-shrink-0">
+                    <i className="bi bi-envelope-paper fs-5"></i>
                   </div>
 
                   <div>
-                    <h3 className="h6 fw-bold mb-2">
+                    <h3 className="h6 fw-bold mb-1">
                       Your Message
                     </h3>
+
                     <p className="text-secondary small mb-0">
-                      Your enquiry can be reviewed by the
-                      REYASA admin team.
+                      Your enquiry can be reviewed by the REYASA
+                      admin team.
                     </p>
                   </div>
                 </div>
 
-                <hr className="my-4" />
+                <hr className="my-3" />
 
                 <div className="text-center">
                   <p className="fw-bold mb-1">REYASA</p>
+
                   <p className="small text-secondary mb-0">
                     Created with passion. Worn with love.
                   </p>
                 </div>
+
               </div>
             </div>
           </div>
 
           {/* RIGHT ENQUIRY FORM CARD */}
-          <div className="col-12 col-lg-7">
-            <div className="card border-0 shadow-lg rounded-4">
-              <div className="card-body p-4 p-md-5">
-                <div className="mb-4">
+          <div className="col-12 col-md-7 col-lg-6">
+            <div className="card border-0 shadow rounded-3">
+              <div className="card-body p-3 p-md-4">
+
+                <div className="mb-3">
                   <p className="text-uppercase text-secondary small fw-semibold mb-2">
                     We'd love to hear from you
                   </p>
 
-                  <h2 className="h3 fw-bold mb-2">
+                  <h2 className="h4 fw-bold mb-2">
                     Send an Enquiry
                   </h2>
 
-                  <p className="text-secondary mb-0">
-                    Complete the form below and share your
-                    question with us.
+                  <p className="text-secondary small mb-0">
+                    Complete the form below and share your question
+                    with us.
                   </p>
                 </div>
 
-                {success && (
-                  <div
-                    className="alert alert-success"
-                    role="alert"
-                  >
-                    <i className="bi bi-check-circle-fill me-2"></i>
-                    {success}
-                  </div>
-                )}
-
-                {error && (
-                  <div
-                    className="alert alert-danger"
-                    role="alert"
-                  >
-                    <i className="bi bi-exclamation-circle-fill me-2"></i>
-                    {error}
-                  </div>
-                )}
-
                 <form onSubmit={handleSubmit}>
-                  {/* PRODUCT */}
+
+                  {/* PRODUCT / COLLECTION */}
                   <div className="mb-3">
                     <label
                       htmlFor="productName"
-                      className="form-label fw-semibold"
+                      className="form-label fw-semibold small mb-1"
                     >
                       Product / Collection
                       <span className="text-secondary fw-normal">
@@ -233,7 +264,7 @@ function Enquiry() {
 
                     <input
                       type="text"
-                      className="form-control form-control-lg"
+                      className="form-control"
                       id="productName"
                       name="productName"
                       placeholder="Enter product or collection name"
@@ -247,7 +278,7 @@ function Enquiry() {
                   <div className="mb-3">
                     <label
                       htmlFor="customerName"
-                      className="form-label fw-semibold"
+                      className="form-label fw-semibold small mb-1"
                     >
                       Full Name *
                     </label>
@@ -271,7 +302,7 @@ function Enquiry() {
                     <div className="col-12 col-md-6">
                       <label
                         htmlFor="email"
-                        className="form-label fw-semibold"
+                        className="form-label fw-semibold small mb-1"
                       >
                         Email Address *
                       </label>
@@ -293,7 +324,7 @@ function Enquiry() {
                     <div className="col-12 col-md-6">
                       <label
                         htmlFor="phone"
-                        className="form-label fw-semibold"
+                        className="form-label fw-semibold small mb-1"
                       >
                         Phone Number *
                       </label>
@@ -315,10 +346,10 @@ function Enquiry() {
                   </div>
 
                   {/* MESSAGE */}
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <label
                       htmlFor="message"
-                      className="form-label fw-semibold"
+                      className="form-label fw-semibold small mb-1"
                     >
                       Your Message *
                     </label>
@@ -327,7 +358,7 @@ function Enquiry() {
                       className="form-control"
                       id="message"
                       name="message"
-                      rows="5"
+                      rows="4"
                       placeholder="Tell us how we can help..."
                       value={formData.message}
                       onChange={handleChange}
@@ -340,10 +371,10 @@ function Enquiry() {
                     </div>
                   </div>
 
-                  {/* SUBMIT */}
+                  {/* SUBMIT BUTTON */}
                   <button
                     type="submit"
-                    className="btn btn-dark btn-lg w-100"
+                    className="btn btn-dark w-100"
                     disabled={loading}
                   >
                     {loading ? (
@@ -365,6 +396,7 @@ function Enquiry() {
                   <p className="text-secondary small text-center mt-3 mb-0">
                     Thank you for connecting with REYASA.
                   </p>
+
                 </form>
               </div>
             </div>
@@ -372,16 +404,18 @@ function Enquiry() {
         </div>
 
         {/* BOTTOM BRAND MESSAGE */}
-        <div className="text-center mt-5">
-          <p className="fw-semibold mb-1">
+        <div className="text-center mt-4">
+          <p className="fw-semibold mb-1" style={{ color: MAROON }}>
             Made for your style. Made for you.
           </p>
-          <p className="small mb-0">
+
+          <p className="small mb-0" style={{ color: MAROON }}>
             REYASA — Created with passion. Worn with love.
           </p>
         </div>
+
       </div>
-    </main>
+    </section>
   );
 }
 

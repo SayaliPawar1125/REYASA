@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import DeliveryPinCodeServices from "../services/DeliveryPinCodeServices";
 import heroBackground from "../assets/reyasa-background.png";
 
@@ -12,10 +12,34 @@ function ManageDeliveryPinCodes() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  const notificationTimer = useRef(null);
   const maroon = "#800000";
 
-  // Load delivery PIN codes
-  const loadPinCodes = async () => {
+  // Show a success popup and automatically hide it after 3 seconds.
+  const showSuccessNotification = (text) => {
+    setMessage(text);
+
+    if (notificationTimer.current) {
+      clearTimeout(notificationTimer.current);
+    }
+
+    notificationTimer.current = setTimeout(() => {
+      setMessage("");
+      notificationTimer.current = null;
+    }, 3000);
+  };
+
+  // Clear the notification timer when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (notificationTimer.current) {
+        clearTimeout(notificationTimer.current);
+      }
+    };
+  }, []);
+
+  // Load delivery PIN codes.
+  const loadPinCodes = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -39,13 +63,13 @@ function ManageDeliveryPinCodes() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadPinCodes();
-  }, []);
+  }, [loadPinCodes]);
 
-  // Add delivery PIN code
+  // Add delivery PIN code.
   const handleAdd = async (event) => {
     event.preventDefault();
 
@@ -65,7 +89,9 @@ function ManageDeliveryPinCodes() {
       await DeliveryPinCodeServices.addDeliveryPinCode(cleanedPin);
 
       setPinCode("");
-      setMessage("Delivery PIN code added successfully.");
+      showSuccessNotification(
+        `Delivery PIN code ${cleanedPin} added successfully.`
+      );
 
       await loadPinCodes();
     } catch (err) {
@@ -79,7 +105,7 @@ function ManageDeliveryPinCodes() {
     }
   };
 
-  // Enable or disable a PIN code
+  // Enable or disable a PIN code.
   const handleStatusChange = async (item) => {
     setError("");
     setMessage("");
@@ -91,7 +117,11 @@ function ManageDeliveryPinCodes() {
         !item.active
       );
 
-      setMessage(`PIN code ${item.pinCode} updated successfully.`);
+      showSuccessNotification(
+        `Delivery for PIN code ${item.pinCode} ${
+          !item.active ? "enabled" : "disabled"
+        } successfully.`
+      );
 
       await loadPinCodes();
     } catch (err) {
@@ -105,7 +135,7 @@ function ManageDeliveryPinCodes() {
     }
   };
 
-  // Delete a PIN code
+  // Delete a PIN code.
   const handleDelete = async (item) => {
     const confirmed = window.confirm(
       `Delete delivery PIN code ${item.pinCode}?`
@@ -120,7 +150,9 @@ function ManageDeliveryPinCodes() {
     try {
       await DeliveryPinCodeServices.deleteDeliveryPinCode(item.id);
 
-      setMessage("Delivery PIN code deleted successfully.");
+      showSuccessNotification(
+        `Delivery PIN code ${item.pinCode} deleted successfully.`
+      );
 
       await loadPinCodes();
     } catch (err) {
@@ -150,16 +182,12 @@ function ManageDeliveryPinCodes() {
         backgroundPosition: "center top",
         backgroundRepeat: "no-repeat",
         backgroundAttachment: "scroll",
-
-        // Space for the fixed admin navbar
         paddingTop: "150px",
-
         minHeight: "100vh",
         boxSizing: "border-box",
       }}
     >
       <div className="container">
-
         {/* PAGE HEADING */}
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <div>
@@ -185,10 +213,7 @@ function ManageDeliveryPinCodes() {
               Manage Delivery PIN Codes
             </h2>
 
-            <p
-              className="mb-0"
-              style={{ color: maroon }}
-            >
+            <p className="mb-0" style={{ color: maroon }}>
               Manage the destination PIN codes where REYASA accepts
               deliveries.
             </p>
@@ -205,11 +230,21 @@ function ManageDeliveryPinCodes() {
           </button>
         </div>
 
-        {/* SUCCESS MESSAGE */}
+        {/* SUCCESS POPUP */}
         {message && (
-          <div className="alert alert-success" role="status">
-            <i className="bi bi-check-circle me-2"></i>
-            {message}
+          <div
+            className="reyasa-cart-notification"
+            role="status"
+            aria-live="polite"
+          >
+            <i
+              className="bi bi-check-circle-fill"
+              aria-hidden="true"
+            ></i>
+
+            <p className="reyasa-cart-notification-message">
+              {message}
+            </p>
           </div>
         )}
 
@@ -218,6 +253,13 @@ function ManageDeliveryPinCodes() {
           <div className="alert alert-danger" role="alert">
             <i className="bi bi-exclamation-triangle me-2"></i>
             {error}
+
+            <button
+              type="button"
+              className="btn-close float-end"
+              aria-label="Close"
+              onClick={() => setError("")}
+            ></button>
           </div>
         )}
 
@@ -360,7 +402,10 @@ function ManageDeliveryPinCodes() {
                 >
                   {saving ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        aria-hidden="true"
+                      ></span>
                       Adding...
                     </>
                   ) : (
@@ -398,9 +443,7 @@ function ManageDeliveryPinCodes() {
                   <span className="visually-hidden">Loading...</span>
                 </div>
 
-                <p className="mt-3 mb-0">
-                  Loading PIN codes...
-                </p>
+                <p className="mt-3 mb-0">Loading PIN codes...</p>
               </div>
             ) : pinCodes.length === 0 ? (
               <div className="text-center p-5">
@@ -513,7 +556,6 @@ function ManageDeliveryPinCodes() {
             REYASA · CREATED WITH PASSION. WORN WITH LOVE.
           </small>
         </div>
-
       </div>
     </main>
   );

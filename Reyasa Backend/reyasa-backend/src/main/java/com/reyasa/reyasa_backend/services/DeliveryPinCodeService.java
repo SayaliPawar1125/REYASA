@@ -1,4 +1,3 @@
-
 package com.reyasa.reyasa_backend.services;
 
 import com.reyasa.reyasa_backend.dto.DeliveryPinCodeRequest;
@@ -26,7 +25,19 @@ public class DeliveryPinCodeService {
     @Transactional
     public DeliveryPinCode addPinCode(DeliveryPinCodeRequest request) {
 
+        if (request == null || request.getPinCode() == null) {
+            throw new IllegalArgumentException(
+                    "PIN code is required."
+            );
+        }
+
         String pinCode = request.getPinCode().trim();
+
+        if (!pinCode.matches("\\d{6}")) {
+            throw new IllegalArgumentException(
+                    "PIN code must contain exactly 6 digits."
+            );
+        }
 
         if (repository.existsByPinCode(pinCode)) {
             throw new IllegalArgumentException(
@@ -43,9 +54,13 @@ public class DeliveryPinCodeService {
     }
 
     @Transactional
-    public DeliveryPinCode updateStatus(
-            Long id,
-            Boolean active) {
+    public DeliveryPinCode updateStatus(Long id, Boolean active) {
+
+        if (active == null) {
+            throw new IllegalArgumentException(
+                    "PIN code status is required."
+            );
+        }
 
         DeliveryPinCode deliveryPinCode = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -70,8 +85,29 @@ public class DeliveryPinCodeService {
 
     @Transactional(readOnly = true)
     public boolean isDeliveryAvailable(String pinCode) {
+
+        if (pinCode == null) {
+            return false;
+        }
+
+        String normalizedPin = pinCode.trim();
+
+        if (!normalizedPin.matches("\\d{6}")) {
+            return false;
+        }
+
         return repository.existsByPinCodeAndActiveTrue(
-                pinCode.trim()
+                normalizedPin
         );
+    }
+
+    @Transactional(readOnly = true)
+    public void validateDeliveryPin(String pinCode) {
+
+        if (!isDeliveryAvailable(pinCode)) {
+            throw new IllegalArgumentException(
+                    "Delivery is not available for this PIN code."
+            );
+        }
     }
 }

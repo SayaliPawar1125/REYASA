@@ -26,6 +26,7 @@ import ContactMessages from "./Pages/ContactMessages";
 import ManageAbout from "./Pages/ManageAbout";
 import ManageFooter from "./Pages/ManageFooter";
 import ManageExpenses from "./Pages/ManageExpenses";
+import Wishlist from "./Pages/Wishlist";
 
 function AppLayout() {
   const location = useLocation();
@@ -48,6 +49,7 @@ function AppLayout() {
         <Route path="/forgot-password" element={<ForgotPassword />}/>
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/wishlist" element={<Wishlist />} />
 
         {/* Admin pages */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />

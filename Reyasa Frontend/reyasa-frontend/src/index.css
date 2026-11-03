@@ -15,9 +15,10 @@ body {
   padding-top: 0;
 }
 
-/* ================================
+
+/* ========================================
    CUSTOMER NAVBAR
-================================ */
+======================================== */
 
 .reyasa-navbar {
   background-color: #1d1712;
@@ -103,9 +104,10 @@ body {
   font-size: 28px;
 }
 
-/* ================================
+
+/* ========================================
    CUSTOMER REGISTRATION
-================================ */
+======================================== */
 
 .registration-page {
   min-height: calc(100vh - 105px);
@@ -120,9 +122,10 @@ body {
   box-shadow: 0 10px 35px rgba(60, 40, 20, 0.12);
 }
 
-/* ================================
+
+/* ========================================
    ADMIN NAVBAR
-================================ */
+======================================== */
 
 .admin-navbar {
   position: fixed !important;
@@ -138,7 +141,7 @@ body {
   z-index: 9999;
 }
 
-/* Circular admin logo */
+/* Admin logo */
 .admin-navbar-logo {
   width: 58px;
   height: 58px;
@@ -159,7 +162,7 @@ body {
   line-height: 1.1;
 }
 
-/* Admin brand tagline */
+/* Admin tagline */
 .admin-brand-tagline {
   color: #f8f5ed;
   font-size: 10px;
@@ -168,7 +171,7 @@ body {
   white-space: nowrap;
 }
 
-/* Admin navbar links */
+/* Admin navigation links */
 .admin-navbar .navbar-nav {
   gap: 4px;
 }
@@ -190,18 +193,215 @@ body {
   display: none;
 }
 
-/* ================================
+
+/* ========================================
    ADMIN DASHBOARD
-================================ */
+======================================== */
 
 .admin-dashboard-page {
   min-height: 100vh;
   padding-top: 115px;
 }
 
-/* ================================
-   RESPONSIVE
-================================ */
+
+/* ========================================
+   REYASA SWEETALERT2 LOGIN POPUP
+======================================== */
+
+.reyasa-popup {
+  width: 420px;
+  max-width: calc(100% - 30px);
+  padding: 32px 28px 26px !important;
+  border: 1px solid #f1dddd !important;
+  border-radius: 22px !important;
+  background: #ffffff;
+  box-shadow: 0 15px 50px rgba(65, 0, 0, 0.2) !important;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.reyasa-popup-title {
+  margin: 0 0 18px;
+  color: #800000 !important;
+  font-size: 25px;
+  font-weight: 700 !important;
+  line-height: 1.4;
+  letter-spacing: -0.5px;
+}
+
+.reyasa-popup-message {
+  margin: 0;
+  padding: 0;
+  color: #555555 !important;
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+}
+
+.reyasa-login-content {
+  padding: 5px 0;
+  text-align: center;
+}
+
+.reyasa-login-icon {
+  display: flex;
+  width: 78px;
+  height: 78px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  border: 1px solid #f1d6d6;
+  border-radius: 50%;
+  background: #fff0f0;
+  box-shadow: 0 5px 15px rgba(128, 0, 0, 0.1);
+}
+
+.reyasa-login-icon i {
+  color: #800000;
+  font-size: 35px;
+}
+
+.reyasa-login-tagline {
+  margin: 0 0 10px;
+  color: #800000;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.reyasa-login-description {
+  margin: 0;
+  color: #666666;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+
+.reyasa-popup-button {
+  min-width: 155px;
+  margin-top: 20px;
+  padding: 12px 22px !important;
+  border: 1px solid #800000 !important;
+  border-radius: 9px !important;
+  background: #800000 !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.18);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease !important;
+}
+
+.reyasa-popup-button:hover {
+  transform: translateY(-2px);
+  border-color: #5c0000 !important;
+  background: #5c0000 !important;
+  box-shadow: 0 7px 16px rgba(128, 0, 0, 0.25);
+}
+
+.reyasa-popup-button:focus-visible {
+  outline: 3px solid rgba(128, 0, 0, 0.25);
+  outline-offset: 3px;
+}
+
+.swal2-show.reyasa-popup {
+  animation: reyasa-popup-appear 0.3s ease-out;
+}
+
+@keyframes reyasa-popup-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+
+/* ========================================
+   REYASA CART SUCCESS TOAST
+======================================== */
+
+/* Small floating card in the top-right corner */
+.reyasa-cart-toast {
+  position: fixed;
+  top: 115px;
+  right: 25px;
+  z-index: 10000;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  min-width: 280px;
+
+  padding: 15px 18px;
+
+  background-color: #ffffff;
+  border: 1px solid #d7eadf;
+  border-left: 4px solid #198754;
+  border-radius: 12px;
+
+  color: #333333;
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.14);
+
+  animation: reyasa-toast-show 0.3s ease-out;
+}
+
+/* Green success icon */
+.reyasa-cart-toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 50%;
+  background-color: #eaf7f1;
+
+  color: #198754;
+  font-size: 21px;
+}
+
+/* Success message */
+.reyasa-cart-toast-message {
+  flex: 1;
+  margin: 0;
+
+  color: #333333;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* Popup entrance animation */
+@keyframes reyasa-toast-show {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* ========================================
+   RESPONSIVE DESIGN
+======================================== */
 
 @media (max-width: 1199.98px) {
   .admin-navbar {
@@ -227,7 +427,39 @@ body {
   }
 }
 
+
+/* ========================================
+   MOBILE RESPONSIVE DESIGN
+======================================== */
+
 @media (max-width: 575.98px) {
+  /* Customer navbar */
+  .reyasa-logo {
+    width: 55px;
+    height: 55px;
+  }
+
+  .brand-text {
+    margin-left: 10px;
+  }
+
+  .brand-name {
+    font-size: 25px;
+    letter-spacing: 4px;
+  }
+
+  .brand-tagline {
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-top: 6px;
+  }
+
+  .login-icon {
+    font-size: 25px;
+    margin-left: 10px;
+  }
+
+  /* Admin navbar */
   .admin-navbar-logo {
     width: 45px;
     height: 45px;
@@ -244,11 +476,167 @@ body {
     letter-spacing: 1px;
   }
 
+  /* Admin dashboard */
   .admin-dashboard-page {
     padding-top: 100px;
   }
 
+  /* Registration */
   .registration-card {
     padding: 25px;
+  }
+
+  .registration-page {
+    padding: 35px 15px;
+  }
+
+  /* Login popup */
+  .reyasa-popup {
+    width: calc(100% - 24px);
+    max-width: 380px;
+    padding: 26px 20px 22px !important;
+    border-radius: 18px !important;
+  }
+
+  .reyasa-popup-title {
+    font-size: 22px !important;
+  }
+
+  .reyasa-login-icon {
+    width: 68px;
+    height: 68px;
+    margin-bottom: 15px;
+  }
+
+  .reyasa-login-icon i {
+    font-size: 30px;
+  }
+
+  .reyasa-login-tagline {
+    font-size: 15px;
+  }
+
+  .reyasa-login-description {
+    font-size: 13px;
+  }
+
+  .reyasa-popup-button {
+    width: 100%;
+    max-width: 220px;
+    padding: 11px 24px !important;
+    font-size: 14px !important;
+  }
+
+  /* Cart success popup */
+  .reyasa-cart-toast {
+    top: 85px;
+    right: 12px;
+
+    width: auto;
+    min-width: 0;
+    max-width: calc(100vw - 24px);
+
+    gap: 9px;
+    padding: 12px 14px;
+
+    border-radius: 10px;
+  }
+
+  .reyasa-cart-toast-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 19px;
+  }
+
+  .reyasa-cart-toast-message {
+    font-size: 12px;
+  }
+}
+
+
+/* ========================================
+   REDUCED MOTION ACCESSIBILITY
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .reyasa-cart-toast,
+  .swal2-show.reyasa-popup {
+    animation: none;
+  }
+
+  .reyasa-popup-button {
+    transition: none !important;
+  }
+}
+
+
+
+/* REYASA success notification popup */
+.reyasa-cart-notification {
+  position: fixed;
+  top: 100px;
+  right: 24px;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 16px 20px;
+
+  border: 1px solid #a8d8c8;
+  border-left: 5px solid #198754;
+  border-radius: 12px;
+
+  background-color: #ffffff;
+  color: #174b38;
+
+  font-size: 15px;
+  font-weight: 500;
+
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+
+  animation: reyasa-notification-appear 0.3s ease-out;
+}
+
+.reyasa-cart-notification i {
+  flex-shrink: 0;
+  color: #198754;
+  font-size: 25px;
+}
+
+.reyasa-cart-notification-message {
+  margin: 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+@keyframes reyasa-notification-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 576px) {
+  .reyasa-cart-notification {
+    top: 90px;
+    right: 12px;
+    max-width: calc(100vw - 24px);
+    gap: 10px;
+    padding: 13px 14px;
+    font-size: 13px;
+  }
+
+  .reyasa-cart-notification i {
+    font-size: 21px;
   }
 }

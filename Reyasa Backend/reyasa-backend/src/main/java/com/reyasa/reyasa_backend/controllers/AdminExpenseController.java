@@ -1,8 +1,10 @@
-package com.reyasa.reyasa_backend.controllers;
+ package com.reyasa.reyasa_backend.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.reyasa.reyasa_backend.dto.ExpenseDto;
 import com.reyasa.reyasa_backend.services.ExpenseService;
+
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -27,8 +29,12 @@ public class AdminExpenseController {
     ) {
         this.expenseService = expenseService;
         this.objectMapper = objectMapper;
+
+        // Register support for LocalDate and LocalDateTime
+        this.objectMapper.registerModule(new JavaTimeModule());
     }
 
+    // Get all expenses with optional filters
     @GetMapping
     public ResponseEntity<List<ExpenseDto>> getExpenses(
             @RequestParam(required = false) LocalDate startDate,
@@ -36,38 +42,57 @@ public class AdminExpenseController {
             @RequestParam(required = false) String category
     ) {
         return ResponseEntity.ok(
-                expenseService.getExpenses(startDate, endDate, category)
+                expenseService.getExpenses(
+                        startDate,
+                        endDate,
+                        category
+                )
         );
     }
 
+    // Get expense summary
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate
     ) {
         return ResponseEntity.ok(
-                expenseService.getSummary(startDate, endDate)
+                expenseService.getSummary(
+                        startDate,
+                        endDate
+                )
         );
     }
 
+    // Get expense by ID
     @GetMapping("/{id}")
-    public ResponseEntity<ExpenseDto> getExpense(@PathVariable Long id) {
-        return ResponseEntity.ok(expenseService.getExpense(id));
+    public ResponseEntity<ExpenseDto> getExpense(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                expenseService.getExpense(id)
+        );
     }
 
+    // Create expense with optional receipt upload
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ExpenseDto> createExpense(
             @RequestPart("data") String data,
             @RequestPart(value = "receipt", required = false)
             MultipartFile receipt
     ) throws Exception {
-        ExpenseDto dto = objectMapper.readValue(data, ExpenseDto.class);
+
+        ExpenseDto dto = objectMapper.readValue(
+                data,
+                ExpenseDto.class
+        );
 
         return ResponseEntity.ok(
                 expenseService.createExpense(dto, receipt)
         );
     }
 
+    // Update expense with optional receipt upload
     @PutMapping(
             value = "/{id}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -78,24 +103,38 @@ public class AdminExpenseController {
             @RequestPart(value = "receipt", required = false)
             MultipartFile receipt
     ) throws Exception {
-        ExpenseDto dto = objectMapper.readValue(data, ExpenseDto.class);
+
+        ExpenseDto dto = objectMapper.readValue(
+                data,
+                ExpenseDto.class
+        );
 
         return ResponseEntity.ok(
-                expenseService.updateExpense(id, dto, receipt)
+                expenseService.updateExpense(
+                        id,
+                        dto,
+                        receipt
+                )
         );
     }
 
+    // Delete expense
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteExpense(
+            @PathVariable Long id
+    ) {
         expenseService.deleteExpense(id);
+
         return ResponseEntity.noContent().build();
     }
 
+    // Download expense receipt
     @GetMapping("/{id}/receipt")
-    public ResponseEntity<byte[]> getReceipt(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getReceipt(
+            @PathVariable Long id
+    ) {
         byte[] file = expenseService.getReceipt(id);
 
-        // The server deliberately serves uploaded receipts as downloads.
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(

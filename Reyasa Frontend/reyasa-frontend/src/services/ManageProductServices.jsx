@@ -1,45 +1,56 @@
-
 import axios from "axios";
 
 const API_URL = "http://localhost:8080/api/manageproducts";
 const UPLOAD_URL = "http://localhost:8080/api/uploads";
 
-// Common authorization configuration
 const getConfig = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   },
 });
 
-// Get all products for admin
+// ADMIN PRODUCTS
+
 const getAllProductsForAdmin = () =>
   axios.get(`${API_URL}/admin/all`, getConfig());
 
-// Get all active products
+// ACTIVE PRODUCTS
+
 const getAllActiveProducts = () =>
   axios.get(API_URL);
 
-// Get trending products for Home page
+// TRENDING PRODUCTS
+
 const getTrendingProducts = () =>
   axios.get(`${API_URL}/trending`);
 
-// Add a new product
+// PRODUCT BY ID
+
+const getProductById = (id) =>
+  axios.get(`${API_URL}/${id}`);
+
+// ADD PRODUCT
+
 const addProduct = (product) =>
   axios.post(API_URL, product, getConfig());
 
-// Update an existing product
+// UPDATE PRODUCT
+
 const updateProduct = (id, product) =>
   axios.put(`${API_URL}/${id}`, product, getConfig());
 
-// Activate a product
+// ACTIVATE PRODUCT
+
 const activateProduct = (id) =>
   axios.patch(`${API_URL}/${id}/activate`, {}, getConfig());
 
-// Deactivate a product
+// DEACTIVATE PRODUCT
+
 const deactivateProduct = (id) =>
   axios.patch(`${API_URL}/${id}/deactivate`, {}, getConfig());
 
-// Update product stock
+// UPDATE STOCK
+
 const updateStock = (id, stockQuantity) =>
   axios.patch(
     `${API_URL}/${id}/stock`,
@@ -47,7 +58,8 @@ const updateStock = (id, stockQuantity) =>
     getConfig()
   );
 
-// Update trending status
+// UPDATE TRENDING STATUS
+
 const updateTrendingStatus = (id, trending) =>
   axios.patch(
     `${API_URL}/${id}/trending`,
@@ -55,37 +67,84 @@ const updateTrendingStatus = (id, trending) =>
     getConfig()
   );
 
-  // Get one active product by ID
-const getProductById = (id) =>
-  axios.get(`${API_URL}/${id}`);
+// UPLOAD ONE IMAGE
 
-
-
-// Upload product image
 const uploadImage = (file) => {
-  const data = new FormData();
-  data.append("file", file);
+  const formData = new FormData();
+
+  formData.append("file", file);
 
   return axios.post(
     `${UPLOAD_URL}/image`,
-    data,
-    getConfig()
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
   );
 };
 
-// Export all product services
+// EXTRACT IMAGE KEY
+
+const extractImageKey = (response) => {
+  const data = response?.data;
+
+  if (typeof data === "string") {
+    return data;
+  }
+
+  return (
+    data?.imageKey ||
+    data?.filename ||
+    data?.fileName ||
+    data?.name ||
+    null
+  );
+};
+
+// UPLOAD MULTIPLE IMAGES
+
+const uploadMultipleImages = async (files) => {
+  const uploadedImages = [];
+
+  for (const file of files) {
+
+    const response = await uploadImage(file);
+
+    const imageKey = extractImageKey(response);
+
+    if (!imageKey) {
+      throw new Error(
+        `Image upload failed for ${file.name}`
+      );
+    }
+
+    uploadedImages.push(imageKey);
+  }
+
+  return uploadedImages;
+};
+
+// EXPORT SERVICES
+
 const ManageProductServices = {
   getAllProductsForAdmin,
   getAllActiveProducts,
   getTrendingProducts,
   getProductById,
+
   addProduct,
   updateProduct,
+
   activateProduct,
   deactivateProduct,
+
   updateStock,
   updateTrendingStatus,
+
   uploadImage,
+  uploadMultipleImages,
 };
 
 export default ManageProductServices;

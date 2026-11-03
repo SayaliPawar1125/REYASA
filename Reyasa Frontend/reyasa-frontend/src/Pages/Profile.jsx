@@ -486,6 +486,9 @@ function Profile() {
 
  
 
+
+ 
+
                         <div className="text-white">
 
                           {profile.lastName || "Not available"}

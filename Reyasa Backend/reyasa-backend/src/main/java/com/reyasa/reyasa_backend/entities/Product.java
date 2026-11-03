@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +13,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -20,10 +22,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
 public class Product {
-
-
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,12 +44,22 @@ public class Product {
         @Column(length = 2000)
         private String description;
 
-        // Maps to your existing shirt1.jpg through shirt8.jpg images
+        // Primary image - maintained for backward compatibility
         @NotBlank(message = "Image key is required")
-        @Column(nullable = false, length = 40)
+        @Column(nullable = false, length = 255)
         private String imageKey;
 
-        // Example: S,M,L,XL
+        // Multiple images belonging to this product
+        @ElementCollection(fetch = FetchType.EAGER)
+        @CollectionTable(
+                name = "product_images",
+                joinColumns = @JoinColumn(name = "product_id")
+        )
+        @Column(name = "image_key", nullable = false, length = 255)
+        @OrderColumn(name = "image_order")
+        @Builder.Default
+        private List<String> imageKeys = new ArrayList<>();
+
         @NotBlank(message = "Available sizes are required")
         @Column(nullable = false, length = 100)
         private String availableSizes;
@@ -63,6 +72,7 @@ public class Product {
         @Builder.Default
         @Column(nullable = false)
         private boolean active = true;
+
         @Builder.Default
         @Column(nullable = false)
         private boolean trending = false;
@@ -75,14 +85,38 @@ public class Product {
 
         @PrePersist
         public void onCreate() {
-            LocalDateTime now = LocalDateTime.now();
-            createdAt = now;
-            updatedAt = now;
+                LocalDateTime now = LocalDateTime.now();
+
+                createdAt = now;
+                updatedAt = now;
+
+                if (imageKeys == null) {
+                        imageKeys = new ArrayList<>();
+                }
+
+                // Keep the primary image in the image list.
+                if (imageKey != null && !imageKey.isBlank()
+                        && !imageKeys.contains(imageKey)) {
+                        imageKeys.add(0, imageKey);
+                }
+
+                // Use the first image as the primary image if needed.
+                if ((imageKey == null || imageKey.isBlank())
+                        && !imageKeys.isEmpty()) {
+                        imageKey = imageKeys.get(0);
+                }
         }
 
         @PreUpdate
         public void onUpdate() {
-            updatedAt = LocalDateTime.now();
-        }
-    }
+                updatedAt = LocalDateTime.now();
 
+                if (imageKeys == null) {
+                        imageKeys = new ArrayList<>();
+                }
+
+                if (!imageKeys.isEmpty()) {
+                        imageKey = imageKeys.get(0);
+                }
+        }
+}

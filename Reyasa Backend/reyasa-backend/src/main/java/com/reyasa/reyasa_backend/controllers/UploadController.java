@@ -1,4 +1,3 @@
-
 package com.reyasa.reyasa_backend.controllers;
 
 import org.springframework.http.HttpStatus;
@@ -34,6 +33,7 @@ public class UploadController {
             @RequestParam("file") MultipartFile file) {
 
         try {
+
             if (file == null || file.isEmpty()) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
@@ -58,6 +58,7 @@ public class UploadController {
 
             if (contentType == null ||
                     !allowedTypes.contains(contentType)) {
+
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "Only JPG, PNG and WEBP images are allowed"
@@ -94,15 +95,21 @@ public class UploadController {
 
             Files.copy(file.getInputStream(), destination);
 
-            return ResponseEntity.ok(Map.of(
-                    "imageKey", imageKey,
-                    "imageUrl", "/uploads/" + imageKey
-            ));
+            String imageUrl = "http://localhost:8080/uploads/" + imageKey;
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "imageKey", imageKey,
+                            "imageUrl", imageUrl
+                    )
+            );
 
         } catch (IOException e) {
+
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Unable to upload image"
+                    "Unable to upload image",
+                    e
             );
         }
     }

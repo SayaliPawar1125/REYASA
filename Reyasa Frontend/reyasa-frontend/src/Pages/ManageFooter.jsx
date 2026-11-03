@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import heroBackground from "../assets/reyasa-background.png";
 import FooterService from "../services/FooterService";
 
@@ -42,17 +42,31 @@ function ManageFooter() {
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
 
-  // LOAD FOOTER SETTINGS FROM SPRING BOOT
-  useEffect(() => {
-    loadFooter();
-  }, []);
+  // SUCCESS POPUP TIMER
+  const notificationTimer = useRef(null);
 
+  // SHOW SUCCESS POPUP FOR 3 SECONDS
+  const showSuccessNotification = (text) => {
+    if (notificationTimer.current) {
+      clearTimeout(notificationTimer.current);
+    }
+
+    setMessageType("success");
+    setMessage(text);
+
+    notificationTimer.current = setTimeout(() => {
+      setMessage("");
+      notificationTimer.current = null;
+    }, 3000);
+  };
+
+  // LOAD FOOTER SETTINGS FROM SPRING BOOT
   const loadFooter = async () => {
     setLoading(true);
 
     try {
       const response = await FooterService.getFooter();
-      const data = response.data;
+      const data = response.data || {};
 
       setFooter({
         ...DEFAULT_FOOTER,
@@ -71,6 +85,7 @@ function ManageFooter() {
       setMessage("");
     } catch (error) {
       console.error("Unable to load footer settings:", error);
+
       setMessageType("danger");
       setMessage(
         "Unable to load footer settings from the server. Check whether your backend is running."
@@ -79,6 +94,16 @@ function ManageFooter() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadFooter();
+
+    return () => {
+      if (notificationTimer.current) {
+        clearTimeout(notificationTimer.current);
+      }
+    };
+  }, []);
 
   // UPDATE TEXT FIELDS
   const updateField = (field, value) => {
@@ -168,17 +193,26 @@ function ManageFooter() {
 
     try {
       const response = await FooterService.saveFooter(footer);
+      const data = response.data || {};
 
       setFooter({
         ...DEFAULT_FOOTER,
-        ...response.data,
-        quickLinks: response.data.quickLinks || [],
-        socialLinks: response.data.socialLinks || [],
-        policyLinks: response.data.policyLinks || [],
+        ...data,
+        quickLinks: Array.isArray(data.quickLinks)
+          ? data.quickLinks
+          : [],
+        socialLinks: Array.isArray(data.socialLinks)
+          ? data.socialLinks
+          : [],
+        policyLinks: Array.isArray(data.policyLinks)
+          ? data.policyLinks
+          : [],
       });
 
-      setMessageType("success");
-      setMessage("Footer settings saved successfully to the database.");
+      // SUCCESS POPUP
+      showSuccessNotification(
+        "Footer settings saved successfully to the database."
+      );
     } catch (error) {
       console.error("Unable to save footer settings:", error);
 
@@ -208,17 +242,26 @@ function ManageFooter() {
 
     try {
       const response = await FooterService.resetFooter();
+      const data = response.data || {};
 
       setFooter({
         ...DEFAULT_FOOTER,
-        ...response.data,
-        quickLinks: response.data.quickLinks || [],
-        socialLinks: response.data.socialLinks || [],
-        policyLinks: response.data.policyLinks || [],
+        ...data,
+        quickLinks: Array.isArray(data.quickLinks)
+          ? data.quickLinks
+          : [],
+        socialLinks: Array.isArray(data.socialLinks)
+          ? data.socialLinks
+          : [],
+        policyLinks: Array.isArray(data.policyLinks)
+          ? data.policyLinks
+          : [],
       });
 
-      setMessageType("success");
-      setMessage("Default footer settings restored in the database.");
+      // SUCCESS POPUP
+      showSuccessNotification(
+        "Default footer settings restored in the database."
+      );
     } catch (error) {
       console.error("Unable to reset footer settings:", error);
 
@@ -331,8 +374,7 @@ function ManageFooter() {
 
   const previewLinks = (links = []) =>
     links.filter(
-      (link) =>
-        link.label?.trim() && link.url?.trim()
+      (link) => link.label?.trim() && link.url?.trim()
     );
 
   return (
@@ -350,6 +392,40 @@ function ManageFooter() {
         boxSizing: "border-box",
       }}
     >
+      {/* SUCCESS POPUP AND ERROR MESSAGE */}
+      {message && messageType === "success" && (
+        <div
+          className="reyasa-cart-notification"
+          role="status"
+          aria-live="polite"
+        >
+          <i
+            className="bi bi-check-circle-fill"
+            aria-hidden="true"
+          ></i>
+
+          <p className="reyasa-cart-notification-message">
+            {message}
+          </p>
+        </div>
+      )}
+
+      {message && messageType === "danger" && (
+        <div
+          className="alert alert-danger alert-dismissible fade show"
+          role="alert"
+        >
+          {message}
+
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setMessage("")}
+          ></button>
+        </div>
+      )}
+
       {/* PAGE HEADING */}
       <div className="mb-4">
         <p
@@ -374,23 +450,7 @@ function ManageFooter() {
         </p>
       </div>
 
-      {/* STATUS MESSAGE */}
-      {message && (
-        <div
-          className={`alert alert-${messageType} alert-dismissible fade show`}
-          role="alert"
-        >
-          {message}
-
-          <button
-            type="button"
-            className="btn-close"
-            aria-label="Close"
-            onClick={() => setMessage("")}
-          ></button>
-        </div>
-      )}
-
+      {/* LOADING MESSAGE */}
       {loading && (
         <div className="alert alert-info" role="status">
           <span
@@ -423,7 +483,10 @@ function ManageFooter() {
 
           <div className="row g-3">
             <div className="col-12 col-md-6">
-              <label htmlFor="brandName" className="form-label fw-semibold">
+              <label
+                htmlFor="brandName"
+                className="form-label fw-semibold"
+              >
                 Brand Name
               </label>
 
@@ -441,7 +504,10 @@ function ManageFooter() {
             </div>
 
             <div className="col-12 col-md-6">
-              <label htmlFor="tagline" className="form-label fw-semibold">
+              <label
+                htmlFor="tagline"
+                className="form-label fw-semibold"
+              >
                 Brand Tagline
               </label>
 
@@ -458,7 +524,10 @@ function ManageFooter() {
             </div>
 
             <div className="col-12">
-              <label htmlFor="description" className="form-label fw-semibold">
+              <label
+                htmlFor="description"
+                className="form-label fw-semibold"
+              >
                 Brand Description
               </label>
 
@@ -488,7 +557,10 @@ function ManageFooter() {
 
           <div className="row g-3">
             <div className="col-12 col-md-6">
-              <label htmlFor="footerPhone" className="form-label fw-semibold">
+              <label
+                htmlFor="footerPhone"
+                className="form-label fw-semibold"
+              >
                 Phone Number
               </label>
 
@@ -505,7 +577,10 @@ function ManageFooter() {
             </div>
 
             <div className="col-12 col-md-6">
-              <label htmlFor="footerEmail" className="form-label fw-semibold">
+              <label
+                htmlFor="footerEmail"
+                className="form-label fw-semibold"
+              >
                 Email Address
               </label>
 
@@ -523,7 +598,10 @@ function ManageFooter() {
             </div>
 
             <div className="col-12">
-              <label htmlFor="footerAddress" className="form-label fw-semibold">
+              <label
+                htmlFor="footerAddress"
+                className="form-label fw-semibold"
+              >
                 Business Location
               </label>
 
@@ -567,7 +645,10 @@ function ManageFooter() {
             Copyright
           </h5>
 
-          <label htmlFor="copyright" className="form-label fw-semibold">
+          <label
+            htmlFor="copyright"
+            className="form-label fw-semibold"
+          >
             Copyright Text
           </label>
 

@@ -1,5 +1,5 @@
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import heroBackground from "../assets/reyasa-background.png";
 import ExpenseService from "../services/ExpenseService";
 
@@ -70,6 +70,23 @@ function ManageExpenses() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  // SUCCESS POPUP TIMER
+  const notificationTimer = useRef(null);
+
+  // SHOW SUCCESS POPUP FOR 3 SECONDS
+  const showSuccessNotification = (text) => {
+    if (notificationTimer.current) {
+      clearTimeout(notificationTimer.current);
+    }
+
+    setMessage(text);
+
+    notificationTimer.current = setTimeout(() => {
+      setMessage("");
+      notificationTimer.current = null;
+    }, 3000);
+  };
+
   const money = (value) =>
     `₹${Number(value || 0).toLocaleString("en-IN", {
       minimumFractionDigits: 2,
@@ -82,6 +99,7 @@ function ManageExpenses() {
     err.message ||
     "An unexpected error occurred.";
 
+  // LOAD EXPENSES AND SUMMARY
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -109,25 +127,47 @@ function ManageExpenses() {
 
   useEffect(() => {
     loadData();
+
+    return () => {
+      if (notificationTimer.current) {
+        clearTimeout(notificationTimer.current);
+      }
+    };
   }, [loadData]);
 
+  // UPDATE FORM FIELD
   const updateField = (event) => {
     const { name, value } = event.target;
-    setForm((previous) => ({ ...previous, [name]: value }));
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
     setMessage("");
   };
 
+  // RESET FORM
   const resetForm = () => {
-    setForm(EMPTY_FORM);
+    setForm({
+      ...EMPTY_FORM,
+      expenseDate: new Date().toLocaleDateString("en-CA"),
+    });
+
     setReceipt(null);
     setEditingId(null);
 
     const fileInput = document.getElementById("expenseReceipt");
-    if (fileInput) fileInput.value = "";
+
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
+  // CREATE OR UPDATE EXPENSE
   const handleSubmit = async (event) => {
     event.preventDefault();
+
     setSaving(true);
     setError("");
     setMessage("");
@@ -157,23 +197,29 @@ function ManageExpenses() {
     try {
       if (editingId) {
         await ExpenseService.update(editingId, payload, receipt);
-        setMessage("Expense updated successfully.");
+
+        showSuccessNotification("Expense updated successfully.");
       } else {
         await ExpenseService.create(payload, receipt);
-        setMessage("Expense saved successfully.");
+
+        showSuccessNotification("Expense saved successfully.");
       }
 
       resetForm();
+
       await loadData();
     } catch (err) {
+      setMessage("");
       setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
   };
 
+  // EDIT EXPENSE
   const handleEdit = (expense) => {
     setEditingId(expense.id);
+
     setForm({
       title: expense.title || "",
       category: expense.category || "Other",
@@ -198,26 +244,39 @@ function ManageExpenses() {
     });
   };
 
+  // DELETE EXPENSE
   const handleDelete = async (expense) => {
     const confirmed = window.confirm(
       `Delete "${expense.title}" and its receipt, if present? This cannot be undone.`
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
 
     try {
       await ExpenseService.remove(expense.id);
-      setMessage("Expense deleted successfully.");
 
-      if (editingId === expense.id) resetForm();
+      showSuccessNotification("Expense deleted successfully.");
+
+      if (editingId === expense.id) {
+        resetForm();
+      }
 
       await loadData();
     } catch (err) {
+      setMessage("");
       setError(getErrorMessage(err));
     }
   };
 
+  // DOWNLOAD RECEIPT
   const handleReceiptDownload = async (id) => {
+    setError("");
+
     try {
       await ExpenseService.downloadReceipt(id);
     } catch (err) {
@@ -242,6 +301,41 @@ function ManageExpenses() {
         boxSizing: "border-box",
       }}
     >
+      {/* REYASA SUCCESS POPUP */}
+      {message && (
+        <div
+          className="reyasa-cart-notification"
+          role="status"
+          aria-live="polite"
+        >
+          <i
+            className="bi bi-check-circle-fill"
+            aria-hidden="true"
+          ></i>
+
+          <p className="reyasa-cart-notification-message">
+            {message}
+          </p>
+        </div>
+      )}
+
+      {/* ERROR MESSAGE */}
+      {error && (
+        <div
+          className="alert alert-danger alert-dismissible fade show"
+          role="alert"
+        >
+          {error}
+
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setError("")}
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
+
       {/* PAGE HEADING */}
       <div className="mb-4">
         <p
@@ -265,30 +359,6 @@ function ManageExpenses() {
           all other REYASA business spending.
         </p>
       </div>
-
-      {error && (
-        <div className="alert alert-danger alert-dismissible">
-          {error}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setError("")}
-            aria-label="Close"
-          />
-        </div>
-      )}
-
-      {message && (
-        <div className="alert alert-success alert-dismissible">
-          {message}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setMessage("")}
-            aria-label="Close"
-          />
-        </div>
-      )}
 
       {/* SUMMARY */}
       <div className="row g-3 mb-4">
@@ -319,11 +389,15 @@ function ManageExpenses() {
             <section className="bg-white bg-opacity-95 p-3 p-md-4 h-100">
               <div className="d-flex align-items-center justify-content-between gap-2">
                 <div>
-                  <p className="text-secondary small mb-2">{item.title}</p>
+                  <p className="text-secondary small mb-2">
+                    {item.title}
+                  </p>
+
                   <h4 className="fw-bold mb-0" style={{ color: MAROON }}>
                     {item.count ? item.amount : money(item.amount)}
                   </h4>
                 </div>
+
                 <i
                   className={`bi ${item.icon} fs-2`}
                   style={{ color: MAROON }}
@@ -344,6 +418,7 @@ function ManageExpenses() {
             <h5 className="fw-bold mb-1" style={{ color: MAROON }}>
               {editingId ? "Edit Expense" : "Record New Expense"}
             </h5>
+
             <p className="text-secondary small mb-0">
               Fields marked * are required. Receipts are optional.
             </p>
@@ -366,6 +441,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="title">
                 Expense / Item Name *
               </label>
+
               <input
                 id="title"
                 name="title"
@@ -382,6 +458,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="category">
                 Expense Category *
               </label>
+
               <select
                 id="category"
                 name="category"
@@ -399,9 +476,13 @@ function ManageExpenses() {
             </div>
 
             <div className="col-12 col-md-6 col-xl-4">
-              <label className="form-label fw-semibold" htmlFor="materialType">
+              <label
+                className="form-label fw-semibold"
+                htmlFor="materialType"
+              >
                 Material / Equipment Type
               </label>
+
               <input
                 id="materialType"
                 name="materialType"
@@ -417,6 +498,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="color">
                 Colour / Shade
               </label>
+
               <input
                 id="color"
                 name="color"
@@ -432,6 +514,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="quantity">
                 Quantity *
               </label>
+
               <input
                 id="quantity"
                 name="quantity"
@@ -449,6 +532,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="unit">
                 Unit
               </label>
+
               <select
                 id="unit"
                 name="unit"
@@ -468,6 +552,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="unitCost">
                 Cost Per Unit (₹) *
               </label>
+
               <input
                 id="unitCost"
                 name="unitCost"
@@ -486,6 +571,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="expenseDate">
                 Expense Date *
               </label>
+
               <input
                 id="expenseDate"
                 name="expenseDate"
@@ -502,6 +588,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="supplier">
                 Supplier / Vendor
               </label>
+
               <input
                 id="supplier"
                 name="supplier"
@@ -514,9 +601,13 @@ function ManageExpenses() {
             </div>
 
             <div className="col-12 col-md-6 col-xl-4">
-              <label className="form-label fw-semibold" htmlFor="paymentMethod">
+              <label
+                className="form-label fw-semibold"
+                htmlFor="paymentMethod"
+              >
                 Payment Method
               </label>
+
               <select
                 id="paymentMethod"
                 name="paymentMethod"
@@ -533,9 +624,13 @@ function ManageExpenses() {
             </div>
 
             <div className="col-12 col-md-6">
-              <label className="form-label fw-semibold" htmlFor="expenseReceipt">
+              <label
+                className="form-label fw-semibold"
+                htmlFor="expenseReceipt"
+              >
                 Receipt / Invoice (optional)
               </label>
+
               <input
                 id="expenseReceipt"
                 type="file"
@@ -555,6 +650,7 @@ function ManageExpenses() {
                   setReceipt(file);
                 }}
               />
+
               <div className="form-text">
                 PDF, JPG, PNG or WEBP. Maximum 5 MB.
                 {editingId &&
@@ -566,6 +662,7 @@ function ManageExpenses() {
               <label className="form-label fw-semibold" htmlFor="notes">
                 Notes / Spending Details
               </label>
+
               <textarea
                 id="notes"
                 name="notes"
@@ -584,6 +681,7 @@ function ManageExpenses() {
                   <span className="text-secondary small">
                     Calculated Total
                   </span>
+
                   <h4 className="fw-bold mb-0" style={{ color: MAROON }}>
                     {money(
                       Number(form.quantity || 0) *
@@ -591,6 +689,7 @@ function ManageExpenses() {
                     )}
                   </h4>
                 </div>
+
                 <div className="d-flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -599,6 +698,7 @@ function ManageExpenses() {
                   >
                     Clear Form
                   </button>
+
                   <button
                     type="submit"
                     className="btn text-white"
@@ -606,6 +706,7 @@ function ManageExpenses() {
                     disabled={saving}
                   >
                     <i className="bi bi-save me-2"></i>
+
                     {saving
                       ? "Saving..."
                       : editingId
@@ -631,6 +732,7 @@ function ManageExpenses() {
             <label className="form-label fw-semibold" htmlFor="startDate">
               From Date
             </label>
+
             <input
               id="startDate"
               type="date"
@@ -645,6 +747,7 @@ function ManageExpenses() {
             <label className="form-label fw-semibold" htmlFor="endDate">
               To Date
             </label>
+
             <input
               id="endDate"
               type="date"
@@ -657,9 +760,13 @@ function ManageExpenses() {
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label fw-semibold" htmlFor="categoryFilter">
+            <label
+              className="form-label fw-semibold"
+              htmlFor="categoryFilter"
+            >
               Category
             </label>
+
             <select
               id="categoryFilter"
               className="form-select"
@@ -667,6 +774,7 @@ function ManageExpenses() {
               onChange={(event) => setCategoryFilter(event.target.value)}
             >
               <option value="">All Categories</option>
+
               {CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
@@ -711,6 +819,7 @@ function ManageExpenses() {
             <h5 className="fw-bold mb-1" style={{ color: MAROON }}>
               Expense History
             </h5>
+
             <p className="text-secondary small mb-0">
               {totalItems} record(s) matching the selected filters.
             </p>
@@ -732,6 +841,7 @@ function ManageExpenses() {
             <div className="spinner-border" role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
+
             <p className="text-secondary mt-2 mb-0">
               Loading expenses...
             </p>
@@ -739,7 +849,9 @@ function ManageExpenses() {
         ) : expenses.length === 0 ? (
           <div className="text-center py-5">
             <i className="bi bi-receipt fs-1 text-secondary"></i>
+
             <h6 className="fw-bold mt-3">No expenses found</h6>
+
             <p className="text-secondary mb-0">
               Add an expense or change your filters.
             </p>
@@ -768,43 +880,57 @@ function ManageExpenses() {
                     <td className="text-nowrap">
                       {expense.expenseDate}
                     </td>
+
                     <td>
-                      <div className="fw-semibold">{expense.title}</div>
+                      <div className="fw-semibold">
+                        {expense.title}
+                      </div>
+
                       {expense.supplier && (
                         <small className="text-secondary">
                           {expense.supplier}
                         </small>
                       )}
                     </td>
+
                     <td>
                       <span className="badge text-bg-light border">
                         {expense.category}
                       </span>
                     </td>
+
                     <td>
                       <div>{expense.materialType || "—"}</div>
+
                       {expense.color && (
                         <small className="text-secondary">
                           {expense.color}
                         </small>
                       )}
                     </td>
+
                     <td className="text-nowrap">
                       {expense.quantity ?? "—"} {expense.unit || ""}
                     </td>
+
                     <td className="text-nowrap">
                       {money(expense.unitCost)}
                     </td>
+
                     <td className="fw-bold text-nowrap">
                       {money(expense.totalCost)}
                     </td>
+
                     <td>{expense.paymentMethod || "—"}</td>
+
                     <td>
                       {expense.receiptPath ? (
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-dark text-nowrap"
-                          onClick={() => handleReceiptDownload(expense.id)}
+                          onClick={() =>
+                            handleReceiptDownload(expense.id)
+                          }
                         >
                           <i className="bi bi-download me-1"></i>
                           Receipt
@@ -815,6 +941,7 @@ function ManageExpenses() {
                         </span>
                       )}
                     </td>
+
                     <td>
                       <div className="d-flex gap-2">
                         <button
@@ -825,6 +952,7 @@ function ManageExpenses() {
                         >
                           <i className="bi bi-pencil"></i>
                         </button>
+
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-danger"
@@ -844,6 +972,7 @@ function ManageExpenses() {
                   <td colSpan="6" className="text-end fw-bold">
                     Total for displayed records
                   </td>
+
                   <td className="fw-bold text-nowrap">
                     {money(
                       expenses.reduce(
@@ -853,6 +982,7 @@ function ManageExpenses() {
                       )
                     )}
                   </td>
+
                   <td colSpan="3"></td>
                 </tr>
               </tfoot>

@@ -1,4 +1,3 @@
-
 package com.reyasa.reyasa_backend.config;
 
 import org.springframework.context.annotation.Bean;
@@ -41,7 +40,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // CORS preflight requests
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
 
                         // Authentication
                         .requestMatchers(
@@ -55,6 +57,14 @@ public class SecurityConfig {
                                 "/api/warehouse/public",
                                 "/api/warehouse/check-delivery"
                         ).permitAll()
+
+                        // Public delivery PIN availability check
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/warehouse/delivery-pins/check"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/api/enquiries").permitAll()
 
                         // Admin delivery PIN management
                         .requestMatchers(
@@ -83,14 +93,17 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/api/collections/**"
                         ).hasRole("ADMIN")
+
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/collections/**"
                         ).hasRole("ADMIN")
+
                         .requestMatchers(
                                 HttpMethod.PATCH,
                                 "/api/collections/**"
                         ).hasRole("ADMIN")
+
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/collections/**"
@@ -147,6 +160,8 @@ public class SecurityConfig {
                                 "/api/payments/**"
                         ).hasAnyRole("USER", "ADMIN")
 
+                        .requestMatchers("/api/wishlist", "/api/wishlist/**")
+                        .hasAnyRole("USER", "ADMIN")
                         // Everything else requires authentication
                         .anyRequest().authenticated()
                 )

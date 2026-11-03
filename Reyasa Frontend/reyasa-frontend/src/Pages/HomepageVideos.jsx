@@ -1,8 +1,8 @@
-
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import reyasaBackground from "../assets/reyasa-background.png";
 
 const API_URL = "http://localhost:8080/api";
+const MAROON = "#800000";
 
 const emptyForm = {
   title: "",
@@ -28,8 +28,32 @@ function HomepageVideos() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
+  const notificationTimer = useRef(null);
   const token = localStorage.getItem("token");
 
+  // SUCCESS NOTIFICATION
+  const showSuccessNotification = (text) => {
+    setMessage(text);
+
+    if (notificationTimer.current) {
+      clearTimeout(notificationTimer.current);
+    }
+
+    notificationTimer.current = setTimeout(() => {
+      setMessage("");
+      notificationTimer.current = null;
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (notificationTimer.current) {
+        clearTimeout(notificationTimer.current);
+      }
+    };
+  }, []);
+
+  // API HEADERS
   const getHeaders = useCallback(
     (multipart = false) => {
       const headers = {};
@@ -38,8 +62,6 @@ function HomepageVideos() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      // Do not set Content-Type for FormData.
-      // The browser must add the multipart boundary automatically.
       if (!multipart) {
         headers["Content-Type"] = "application/json";
       }
@@ -49,6 +71,7 @@ function HomepageVideos() {
     [token]
   );
 
+  // HANDLE API RESPONSE
   const handleResponse = async (response) => {
     const text = await response.text();
     let data = null;
@@ -75,6 +98,7 @@ function HomepageVideos() {
     return data;
   };
 
+  // GET MEDIA URL
   const getMediaUrl = (path) => {
     if (!path) return "";
 
@@ -87,6 +111,7 @@ function HomepageVideos() {
     }${path}`;
   };
 
+  // LOAD VIDEOS
   const loadVideos = useCallback(async () => {
     try {
       setLoading(true);
@@ -102,8 +127,8 @@ function HomepageVideos() {
       const videoList = Array.isArray(data)
         ? data
         : Array.isArray(data?.content)
-        ? data.content
-        : [];
+          ? data.content
+          : [];
 
       setVideos(videoList);
     } catch (err) {
@@ -118,6 +143,7 @@ function HomepageVideos() {
     loadVideos();
   }, [loadVideos]);
 
+  // RESET FORM
   const resetForm = () => {
     setForm(emptyForm);
     setVideoFile(null);
@@ -132,11 +158,11 @@ function HomepageVideos() {
     if (posterInput) posterInput.value = "";
   };
 
+  // OPEN ADD FORM
   const openAddForm = () => {
     setError("");
     setMessage("");
 
-    // Only one video record is allowed, even if it is inactive.
     if (videos.length > 0) {
       setError(
         "Only one homepage video is allowed. Edit or delete the existing video first."
@@ -151,11 +177,13 @@ function HomepageVideos() {
     setShowForm(true);
   };
 
+  // OPEN EDIT FORM
   const openEditForm = (video) => {
     setError("");
     setMessage("");
 
     setEditingId(video.id);
+
     setForm({
       title: video.title || "",
       description: video.description || "",
@@ -168,6 +196,7 @@ function HomepageVideos() {
     setShowForm(true);
   };
 
+  // HANDLE INPUT CHANGE
   const handleInputChange = (event) => {
     const { name, value, type, checked } = event.target;
 
@@ -177,6 +206,7 @@ function HomepageVideos() {
     }));
   };
 
+  // UPLOAD OR UPDATE VIDEO
   const saveVideo = async (event) => {
     event.preventDefault();
 
@@ -209,10 +239,7 @@ function HomepageVideos() {
       return;
     }
 
-    if (
-      posterFile &&
-      !posterFile.type.startsWith("image/")
-    ) {
+    if (posterFile && !posterFile.type.startsWith("image/")) {
       setError("Please select a valid poster image.");
       return;
     }
@@ -247,7 +274,7 @@ function HomepageVideos() {
 
       await handleResponse(response);
 
-      setMessage(
+      showSuccessNotification(
         editingId
           ? "Homepage video updated successfully."
           : "Homepage video uploaded successfully."
@@ -262,6 +289,7 @@ function HomepageVideos() {
     }
   };
 
+  // ACTIVATE OR DEACTIVATE VIDEO
   const toggleVideoStatus = async (video) => {
     setError("");
     setMessage("");
@@ -280,7 +308,7 @@ function HomepageVideos() {
 
       await handleResponse(response);
 
-      setMessage(
+      showSuccessNotification(
         `Homepage video ${
           !video.active ? "activated" : "deactivated"
         } successfully.`
@@ -292,6 +320,7 @@ function HomepageVideos() {
     }
   };
 
+  // DELETE VIDEO
   const deleteVideo = async (video) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${video.title}"? This action cannot be undone.`
@@ -317,13 +346,15 @@ function HomepageVideos() {
         resetForm();
       }
 
-      setMessage("Homepage video deleted successfully.");
+      showSuccessNotification("Homepage video deleted successfully.");
+
       await loadVideos();
     } catch (err) {
       setError(err.message || "Unable to delete the homepage video.");
     }
   };
 
+  // SEARCH AND FILTER
   const filteredVideos = videos.filter((video) => {
     const searchText = search.trim().toLowerCase();
 
@@ -344,32 +375,54 @@ function HomepageVideos() {
   const inactiveCount = videos.length - activeCount;
 
   return (
-    <div
-      className="min-vh-100 py-4 mt-5"
+    <main
+      className="container-fluid px-3 px-md-4 pb-4 pb-md-5"
       style={{
         backgroundImage: `url(${reyasaBackground})`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
+        backgroundPosition: "center top",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "scroll",
+        paddingTop: "150px",
+        minHeight: "100vh",
+        boxSizing: "border-box",
       }}
     >
-      <div className="container-fluid px-3 px-md-4 pt-4 pb-5">
-        {/* Page heading */}
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+      <div className="container">
+
+        {/* PAGE HEADING - SAME DESIGN AS MANAGE DELIVERY PIN CODES */}
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <div>
-            <h2 className="fw-bold mb-1" style={{ color: "#800000" }}>
+            <p
+              className="text-uppercase fw-bold mb-2"
+              style={{
+                color: MAROON,
+                letterSpacing: "3px",
+                fontSize: "12px",
+              }}
+            >
+              REYASA Administration
+            </p>
+
+            <h2
+              className="fw-bold mb-2"
+              style={{
+                color: MAROON,
+                fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
+              }}
+            >
               <i className="bi bi-camera-reels-fill me-2"></i>
-              Homepage Videos
+              Manage Homepage Videos
             </h2>
-            <p className="text-secondary mb-0">
+
+            <p className="mb-0" style={{ color: MAROON }}>
               Manage the video displayed on the REYASA customer homepage.
             </p>
           </div>
 
           <button
             type="button"
-            className="btn text-white fw-semibold"
-            style={{ backgroundColor: "#800000" }}
+            className="btn btn-dark px-4"
             onClick={openAddForm}
             disabled={videos.length > 0}
             title={
@@ -383,7 +436,25 @@ function HomepageVideos() {
           </button>
         </div>
 
-        {/* Alerts */}
+        {/* SUCCESS NOTIFICATION */}
+        {message && (
+          <div
+            className="reyasa-cart-notification"
+            role="status"
+            aria-live="polite"
+          >
+            <i
+              className="bi bi-check-circle-fill"
+              aria-hidden="true"
+            ></i>
+
+            <p className="reyasa-cart-notification-message">
+              {message}
+            </p>
+          </div>
+        )}
+
+        {/* ERROR MESSAGE */}
         {error && (
           <div
             className="alert alert-danger alert-dismissible fade show"
@@ -391,6 +462,7 @@ function HomepageVideos() {
           >
             <i className="bi bi-exclamation-triangle-fill me-2"></i>
             {error}
+
             <button
               type="button"
               className="btn-close"
@@ -400,23 +472,7 @@ function HomepageVideos() {
           </div>
         )}
 
-        {message && (
-          <div
-            className="alert alert-success alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="bi bi-check-circle-fill me-2"></i>
-            {message}
-            <button
-              type="button"
-              className="btn-close"
-              aria-label="Close"
-              onClick={() => setMessage("")}
-            ></button>
-          </div>
-        )}
-
-        {/* Statistics */}
+        {/* STATISTICS */}
         <div className="row g-3 mb-4">
           <div className="col-12 col-md-4">
             <div className="card border-0 shadow-sm h-100">
@@ -424,9 +480,10 @@ function HomepageVideos() {
                 <div className="rounded-circle bg-light p-3">
                   <i
                     className="bi bi-camera-video-fill fs-3"
-                    style={{ color: "#800000" }}
+                    style={{ color: MAROON }}
                   ></i>
                 </div>
+
                 <div>
                   <p className="text-secondary mb-1">Total Videos</p>
                   <h3 className="fw-bold mb-0">{videos.length}</h3>
@@ -444,6 +501,7 @@ function HomepageVideos() {
                 <div className="rounded-circle bg-light p-3">
                   <i className="bi bi-check-circle-fill text-success fs-3"></i>
                 </div>
+
                 <div>
                   <p className="text-secondary mb-1">Active Videos</p>
                   <h3 className="fw-bold mb-0">{activeCount}</h3>
@@ -461,6 +519,7 @@ function HomepageVideos() {
                 <div className="rounded-circle bg-light p-3">
                   <i className="bi bi-pause-circle-fill text-secondary fs-3"></i>
                 </div>
+
                 <div>
                   <p className="text-secondary mb-1">Inactive Videos</p>
                   <h3 className="fw-bold mb-0">{inactiveCount}</h3>
@@ -473,12 +532,12 @@ function HomepageVideos() {
           </div>
         </div>
 
-        {/* Add / Edit form */}
+        {/* ADD / EDIT FORM */}
         {showForm && (
           <div className="card border-0 shadow-sm mb-4">
             <div
               className="card-header text-white py-3"
-              style={{ backgroundColor: "#800000" }}
+              style={{ backgroundColor: MAROON }}
             >
               <h5 className="mb-0 fw-semibold">
                 <i
@@ -486,6 +545,7 @@ function HomepageVideos() {
                     editingId ? "bi-pencil-square" : "bi-cloud-upload-fill"
                   } me-2`}
                 ></i>
+
                 {editingId ? "Edit Homepage Video" : "Upload Homepage Video"}
               </h5>
             </div>
@@ -493,10 +553,16 @@ function HomepageVideos() {
             <div className="card-body p-3 p-md-4">
               <form onSubmit={saveVideo}>
                 <div className="row g-3">
+
+                  {/* TITLE */}
                   <div className="col-12 col-md-6">
-                    <label htmlFor="videoTitle" className="form-label fw-semibold">
+                    <label
+                      htmlFor="videoTitle"
+                      className="form-label fw-semibold"
+                    >
                       Video Title <span className="text-danger">*</span>
                     </label>
+
                     <input
                       id="videoTitle"
                       name="title"
@@ -510,6 +576,7 @@ function HomepageVideos() {
                     />
                   </div>
 
+                  {/* DISPLAY ORDER */}
                   <div className="col-12 col-md-6">
                     <label
                       htmlFor="displayOrder"
@@ -517,6 +584,7 @@ function HomepageVideos() {
                     >
                       Display Order
                     </label>
+
                     <input
                       id="displayOrder"
                       name="displayOrder"
@@ -526,11 +594,13 @@ function HomepageVideos() {
                       value={form.displayOrder}
                       onChange={handleInputChange}
                     />
+
                     <div className="form-text">
                       Keep 0 if you do not need a specific order.
                     </div>
                   </div>
 
+                  {/* DESCRIPTION */}
                   <div className="col-12">
                     <label
                       htmlFor="videoDescription"
@@ -538,6 +608,7 @@ function HomepageVideos() {
                     >
                       Description
                     </label>
+
                     <textarea
                       id="videoDescription"
                       name="description"
@@ -550,14 +621,18 @@ function HomepageVideos() {
                     ></textarea>
                   </div>
 
+                  {/* VIDEO FILE */}
                   <div className="col-12 col-md-6">
                     <label
                       htmlFor="homepageVideoFile"
                       className="form-label fw-semibold"
                     >
                       Video File{" "}
-                      {!editingId && <span className="text-danger">*</span>}
+                      {!editingId && (
+                        <span className="text-danger">*</span>
+                      )}
                     </label>
+
                     <input
                       id="homepageVideoFile"
                       type="file"
@@ -568,6 +643,7 @@ function HomepageVideos() {
                         setVideoFile(event.target.files?.[0] || null)
                       }
                     />
+
                     <div className="form-text">
                       {editingId
                         ? "Optional. Select a new file to replace the current video."
@@ -583,6 +659,7 @@ function HomepageVideos() {
                     )}
                   </div>
 
+                  {/* POSTER IMAGE */}
                   <div className="col-12 col-md-6">
                     <label
                       htmlFor="homepagePosterFile"
@@ -590,6 +667,7 @@ function HomepageVideos() {
                     >
                       Poster Image (Optional)
                     </label>
+
                     <input
                       id="homepagePosterFile"
                       type="file"
@@ -599,6 +677,7 @@ function HomepageVideos() {
                         setPosterFile(event.target.files?.[0] || null)
                       }
                     />
+
                     <div className="form-text">
                       Used as the video poster before playback.
                     </div>
@@ -611,6 +690,7 @@ function HomepageVideos() {
                     )}
                   </div>
 
+                  {/* ACTIVE STATUS */}
                   <div className="col-12">
                     <div className="form-check form-switch">
                       <input
@@ -621,6 +701,7 @@ function HomepageVideos() {
                         checked={form.active}
                         onChange={handleInputChange}
                       />
+
                       <label
                         htmlFor="videoActive"
                         className="form-check-label fw-semibold"
@@ -630,11 +711,11 @@ function HomepageVideos() {
                     </div>
                   </div>
 
+                  {/* FORM BUTTONS */}
                   <div className="col-12 d-flex flex-wrap gap-2 pt-2">
                     <button
                       type="submit"
-                      className="btn text-white fw-semibold"
-                      style={{ backgroundColor: "#800000" }}
+                      className="btn btn-dark fw-semibold"
                       disabled={saving}
                     >
                       {saving ? (
@@ -668,18 +749,23 @@ function HomepageVideos() {
           </div>
         )}
 
-        {/* Search and filters */}
+        {/* SEARCH AND FILTERS */}
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-body">
             <div className="row g-3 align-items-end">
               <div className="col-12 col-md-8">
-                <label htmlFor="videoSearch" className="form-label fw-semibold">
+                <label
+                  htmlFor="videoSearch"
+                  className="form-label fw-semibold"
+                >
                   Search Videos
                 </label>
+
                 <div className="input-group">
                   <span className="input-group-text bg-white">
                     <i className="bi bi-search"></i>
                   </span>
+
                   <input
                     id="videoSearch"
                     type="search"
@@ -692,9 +778,13 @@ function HomepageVideos() {
               </div>
 
               <div className="col-12 col-md-4">
-                <label htmlFor="videoFilter" className="form-label fw-semibold">
+                <label
+                  htmlFor="videoFilter"
+                  className="form-label fw-semibold"
+                >
                   Status
                 </label>
+
                 <select
                   id="videoFilter"
                   className="form-select"
@@ -710,12 +800,13 @@ function HomepageVideos() {
           </div>
         </div>
 
-        {/* Video list */}
+        {/* VIDEO LIST */}
         <div className="card border-0 shadow-sm">
           <div className="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <h5 className="mb-0 fw-bold" style={{ color: "#800000" }}>
+            <h5 className="mb-0 fw-bold" style={{ color: MAROON }}>
               Uploaded Homepage Video
             </h5>
+
             <span className="badge text-bg-secondary">
               {filteredVideos.length} result(s)
             </span>
@@ -726,11 +817,12 @@ function HomepageVideos() {
               <div className="text-center py-5">
                 <div
                   className="spinner-border"
-                  style={{ color: "#800000" }}
+                  style={{ color: MAROON }}
                   role="status"
                 >
                   <span className="visually-hidden">Loading...</span>
                 </div>
+
                 <p className="text-secondary mt-3 mb-0">
                   Loading homepage videos...
                 </p>
@@ -738,7 +830,9 @@ function HomepageVideos() {
             ) : filteredVideos.length === 0 ? (
               <div className="text-center py-5 px-3">
                 <i className="bi bi-camera-video fs-1 text-secondary"></i>
+
                 <h5 className="mt-3">No homepage video found</h5>
+
                 <p className="text-secondary mb-3">
                   {videos.length === 0
                     ? "Upload one video to display it on the customer homepage."
@@ -748,8 +842,7 @@ function HomepageVideos() {
                 {videos.length === 0 && (
                   <button
                     type="button"
-                    className="btn text-white"
-                    style={{ backgroundColor: "#800000" }}
+                    className="btn btn-dark"
                     onClick={openAddForm}
                   >
                     <i className="bi bi-cloud-upload me-2"></i>
@@ -793,7 +886,10 @@ function HomepageVideos() {
                             ) : (
                               <div
                                 className="bg-light rounded border d-flex align-items-center justify-content-center"
-                                style={{ width: "180px", height: "105px" }}
+                                style={{
+                                  width: "180px",
+                                  height: "105px",
+                                }}
                               >
                                 <i className="bi bi-camera-video fs-2 text-secondary"></i>
                               </div>
@@ -801,16 +897,20 @@ function HomepageVideos() {
                           </td>
 
                           <td>
-                            <div className="fw-semibold">{video.title}</div>
-                            <div
-                              className="small text-secondary text-break"
-                            >
+                            <div className="fw-semibold">
+                              {video.title}
+                            </div>
+
+                            <div className="small text-secondary text-break">
                               {video.description || "No description"}
                             </div>
+
                             {video.createdAt && (
                               <div className="small text-secondary mt-1">
                                 Uploaded:{" "}
-                                {new Date(video.createdAt).toLocaleDateString()}
+                                {new Date(
+                                  video.createdAt
+                                ).toLocaleDateString()}
                               </div>
                             )}
                           </td>
@@ -820,7 +920,9 @@ function HomepageVideos() {
                           <td>
                             <span
                               className={`badge ${
-                                video.active ? "text-bg-success" : "text-bg-secondary"
+                                video.active
+                                  ? "text-bg-success"
+                                  : "text-bg-secondary"
                               }`}
                             >
                               {video.active ? "Active" : "Inactive"}
@@ -860,6 +962,7 @@ function HomepageVideos() {
                                       : "bi-play-circle"
                                   } me-1`}
                                 ></i>
+
                                 {video.active ? "Deactivate" : "Activate"}
                               </button>
 
@@ -890,8 +993,21 @@ function HomepageVideos() {
             deleting it.
           </div>
         </div>
+
+        {/* FOOTER BRAND MESSAGE */}
+        <div className="text-center py-4">
+          <small
+            className="fw-semibold"
+            style={{
+              color: MAROON,
+              letterSpacing: "2px",
+            }}
+          >
+            REYASA · CREATED WITH PASSION. WORN WITH LOVE.
+          </small>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
 

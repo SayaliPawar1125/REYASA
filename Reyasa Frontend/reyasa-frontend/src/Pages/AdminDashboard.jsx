@@ -105,6 +105,14 @@ function AdminDashboard() {
   // Store Management shortcuts
   const managementItems = [
 
+{
+  title: "Orders",
+  description: "Manage customer orders, track order status, and view order details and payments.",
+  path: "/admin/orders",
+  icon: "bi-bag-check",
+},
+
+
       {
   title: "Manage Enquiry Messages",
   description: "View customer enquiries, check message details, and reply to customers.",

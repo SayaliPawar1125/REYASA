@@ -1,50 +1,118 @@
+import React, { useEffect, useState, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import ManageProductServices from "../services/ManageProductServices";
 import CartServices from "../services/CartServices";
+import WishlistService from "../services/WishlistService";
+
 import reyasaBackground from "../assets/reyasa-background.png";
 
 function Collection() {
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedSizes, setSelectedSizes] = useState({});
-  const [cartLoading, setCartLoading] = useState(null);
-  const [cartMessage, setCartMessage] = useState("");
-  const [cartMessageType, setCartMessageType] = useState("info");
 
-  // Convert backend sizes such as "S,M,L,XL" into an array.
+  const [cartLoading, setCartLoading] = useState(null);
+
+  // SUCCESS NOTIFICATION
+  const [cartMessage, setCartMessage] = useState("");
+  const [showCartToast, setShowCartToast] = useState(false);
+
+  // WISHLIST
+  const [wishlist, setWishlist] = useState([]);
+  const [wishlistLoading, setWishlistLoading] = useState(null);
+
+  // GET AVAILABLE SIZES
   const getAvailableSizes = (availableSizes) => {
     if (Array.isArray(availableSizes)) {
-      return availableSizes
-        .map((size) => String(size).trim())
-        .filter(Boolean);
+      return availableSizes.map((size) => String(size).trim()).filter(Boolean);
     }
 
     if (typeof availableSizes === "string") {
-      return availableSizes
-        .split(",")
-        .map((size) => size.trim())
-        .filter(Boolean);
+      return availableSizes.split(",").map((size) => size.trim()).filter(Boolean);
     }
 
     return [];
   };
 
-  // Build the product image URL using the saved backend image key.
+  // GET PRODUCT IMAGE URL
   const getImageUrl = (imageKey) => {
     if (!imageKey) return "";
 
-    if (/^https?:\/\//i.test(imageKey)) {
-      return imageKey;
+    if (/^https?:\/\//i.test(imageKey)) return imageKey;
+
+    if (imageKey.startsWith("/")) {
+      return `http://localhost:8080${imageKey}`;
     }
 
     return `http://localhost:8080/uploads/${encodeURIComponent(imageKey)}`;
   };
 
-  // Load products managed by the admin.
+  // LOGIN POPUP
+  const showLoginPopup = async () => {
+    const result = await Swal.fire({
+      title: "Please Login to REYASA",
+      html: `
+        <div class="reyasa-login-content">
+          <div class="reyasa-login-icon">
+            <i class="bi bi-bag-heart-fill"></i>
+          </div>
+          <p class="reyasa-login-tagline">
+            Your style journey starts here!
+          </p>
+          <p class="reyasa-login-description">
+            Please log in to your REYASA account to add
+            your favourite products to the cart.
+          </p>
+        </div>
+      `,
+      showCancelButton: false,
+      confirmButtonText:
+        '<i class="bi bi-box-arrow-in-right me-2"></i>Login Now',
+      confirmButtonColor: "#800000",
+      customClass: {
+        popup: "reyasa-popup",
+        title: "reyasa-popup-title",
+        htmlContainer: "reyasa-popup-message",
+        confirmButton: "reyasa-popup-button",
+      },
+    });
+
+    if (result.isConfirmed) {
+      navigate("/login");
+    }
+  };
+
+  // SHOW SUCCESS NOTIFICATION
+  const showSuccessNotification = (message) => {
+    setCartMessage(message);
+    setShowCartToast(false);
+
+    // Allow notification to restart when clicked repeatedly
+    setTimeout(() => {
+      setShowCartToast(true);
+    }, 50);
+  };
+
+  // HIDE NOTIFICATION AFTER 3 SECONDS
+  useEffect(() => {
+    if (!showCartToast) return;
+
+    const timer = setTimeout(() => {
+      setShowCartToast(false);
+      setCartMessage("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [showCartToast]);
+
+  // LOAD PRODUCTS
   const loadProducts = async () => {
     try {
       setLoading(true);
@@ -54,34 +122,16 @@ function Collection() {
         await ManageProductServices.getAllActiveProducts();
 
       const backendProducts = Array.isArray(response.data)
-        ? response.data.filter(
-            (product) => product.active !== false
-          )
+        ? response.data.filter((product) => product.active !== false)
         : [];
 
       setProducts(backendProducts);
-
-      // Select the first available size for each product by default.
-      const initialSizes = {};
-
-      backendProducts.forEach((product) => {
-        const sizes = getAvailableSizes(product.availableSizes);
-
-        if (sizes.length > 0) {
-          initialSizes[product.id] = sizes[0];
-        }
-      });
-
-      setSelectedSizes(initialSizes);
+      setSelectedSizes({});
     } catch (err) {
-      console.error(
-        "Collection products error:",
-        err.response?.data || err.message || err
-      );
+      console.error("Collection products error:", err);
 
       setError(
-        err.response?.status === 401 ||
-          err.response?.status === 403
+        err.response?.status === 401 || err.response?.status === 403
           ? "Unable to access products. Please check your backend security configuration."
           : "Unable to load the collection. Please check your connection and try again."
       );
@@ -90,19 +140,55 @@ function Collection() {
     }
   };
 
-  useEffect(() => {
-    loadProducts();
+  // LOAD WISHLIST FROM DATABASE
+  const loadWishlist = useCallback(async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setWishlist([]);
+      return;
+    }
+
+    try {
+      const response = await WishlistService.getWishlist();
+
+      const wishlistProducts = Array.isArray(response.data)
+        ? response.data.map((item) => String(item.productId))
+        : [];
+
+      setWishlist(wishlistProducts);
+    } catch (error) {
+      console.error("Unable to load wishlist:", error);
+      setWishlist([]);
+    }
   }, []);
 
-  // Generate category filters from actual backend products.
+  // LOAD DATA ON PAGE OPEN
+  useEffect(() => {
+    loadProducts();
+    loadWishlist();
+  }, [loadWishlist]);
+
+  // REFRESH WISHLIST AFTER LOGIN CHANGE
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      loadWishlist();
+    };
+
+    window.addEventListener("authChanged", handleAuthChanged);
+
+    return () => {
+      window.removeEventListener("authChanged", handleAuthChanged);
+    };
+  }, [loadWishlist]);
+
+  // CATEGORY FILTERS
   const categories = [
     "All",
-    ...new Set(
-      products.map((product) => product.category).filter(Boolean)
-    ),
+    ...new Set(products.map((product) => product.category).filter(Boolean)),
   ];
 
-  // Apply the selected category and sort newest product IDs first.
+  // FILTER PRODUCTS
   const filteredProducts = products
     .filter(
       (product) =>
@@ -111,7 +197,7 @@ function Collection() {
     )
     .sort((a, b) => Number(b.id) - Number(a.id));
 
-  // Update the selected size for a product.
+  // CHANGE SELECTED SIZE
   const handleSizeChange = (productId, size) => {
     setSelectedSizes((previous) => ({
       ...previous,
@@ -119,8 +205,123 @@ function Collection() {
     }));
   };
 
-  // Add a real database product to the cart.
+  // ADD OR REMOVE FROM WISHLIST
+  const handleWishlist = async (product) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      const result = await Swal.fire({
+        title: "Please Login to REYASA",
+        html: `
+          <div class="reyasa-login-content">
+            <div class="reyasa-login-icon">
+              <i class="bi bi-heart-fill"></i>
+            </div>
+            <p class="reyasa-login-tagline">
+              Save your favourite styles!
+            </p>
+            <p class="reyasa-login-description">
+              Please log in to your REYASA account
+              to add products to your wishlist.
+            </p>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText:
+          '<i class="bi bi-box-arrow-in-right me-2"></i>Login Now',
+        cancelButtonText: "Continue Shopping",
+        confirmButtonColor: "#800000",
+        customClass: {
+          popup: "reyasa-popup",
+          title: "reyasa-popup-title",
+          htmlContainer: "reyasa-popup-message",
+          confirmButton: "reyasa-popup-button",
+        },
+      });
+
+      if (result.isConfirmed) {
+        navigate("/login");
+      }
+
+      return;
+    }
+
+    const productId = String(product.id);
+    const alreadyAdded = wishlist.includes(productId);
+
+    try {
+      setWishlistLoading(product.id);
+
+      // REMOVE FROM WISHLIST
+      if (alreadyAdded) {
+        await WishlistService.removeFromWishlist(product.id);
+
+        setWishlist((previous) =>
+          previous.filter((id) => String(id) !== productId)
+        );
+
+        showSuccessNotification(
+          `${product.name} removed from wishlist successfully.`
+        );
+      }
+
+      // ADD TO WISHLIST
+      else {
+        await WishlistService.addToWishlist(product.id);
+
+        setWishlist((previous) => {
+          if (previous.includes(productId)) {
+            return previous;
+          }
+
+          return [...previous, productId];
+        });
+
+        showSuccessNotification(
+          `${product.name} added to wishlist successfully.`
+        );
+      }
+
+      // UPDATE NAVBAR WISHLIST COUNT
+      window.dispatchEvent(new Event("wishlistUpdated"));
+    } catch (error) {
+      console.error("Wishlist error:", error.response?.data || error);
+
+      const status = error.response?.status;
+
+      if (status === 401 || status === 403) {
+        Swal.fire({
+          icon: "warning",
+          title: "Login Required",
+          text: "Your session may have expired. Please login again.",
+          confirmButtonColor: "#800000",
+        }).then((result) => {
+          if (result.isConfirmed) navigate("/login");
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Wishlist Error",
+          text:
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Unable to update your wishlist. Please try again.",
+          confirmButtonColor: "#800000",
+        });
+      }
+    } finally {
+      setWishlistLoading(null);
+    }
+  };
+
+  // CHECK WISHLIST STATUS
+  const isInWishlist = (productId) => {
+    return wishlist.includes(String(productId));
+  };
+
+  // ADD TO CART
   const handleAddToCart = async (product) => {
+    setShowCartToast(false);
     setCartMessage("");
 
     const token = localStorage.getItem("token");
@@ -132,74 +333,84 @@ function Collection() {
       userId === "undefined" ||
       userId === "null"
     ) {
-      setCartMessageType("warning");
-      setCartMessage("Please log in to add items to your cart.");
+      await showLoginPopup();
       return;
     }
 
     if (Number(product.stockQuantity) <= 0) {
-      setCartMessageType("warning");
-      setCartMessage("This shirt is currently out of stock.");
+      Swal.fire({
+        icon: "warning",
+        title: "Out of Stock",
+        text: "This product is currently out of stock.",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#800000",
+      });
       return;
     }
 
     const sizes = getAvailableSizes(product.availableSizes);
 
     if (sizes.length === 0) {
-      setCartMessageType("warning");
-      setCartMessage("No sizes are available for this shirt.");
+      Swal.fire({
+        icon: "warning",
+        title: "Size Not Available",
+        text: "No sizes are currently available for this product.",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#800000",
+      });
       return;
     }
 
-    const size = selectedSizes[product.id] || sizes[0];
+    const size = selectedSizes[product.id];
 
-    if (!sizes.includes(size)) {
-      setCartMessageType("warning");
-      setCartMessage("Please select a valid size.");
+    if (!size || !sizes.includes(size)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Please Select Size",
+        text: "Please select a size before adding this product to your cart.",
+        confirmButtonText: "Select Size",
+        confirmButtonColor: "#800000",
+        color: "#800000",
+      });
       return;
     }
 
     try {
       setCartLoading(product.id);
 
-      await CartServices.addToCart(
-        product.id,
-        userId,
-        size,
-        1
-      );
+      await CartServices.addToCart(product.id, userId, size, 1);
 
       window.dispatchEvent(new Event("cartUpdated"));
 
-      setCartMessageType("success");
-      setCartMessage(
+      showSuccessNotification(
         `${product.name} (${size}) added to cart successfully.`
       );
     } catch (err) {
-      console.error(
-        "Add to cart error:",
-        err.response?.data || err.message || err
-      );
+      console.error("Add to cart error:", err.response?.data || err);
 
       const data = err.response?.data;
 
-      if (
-        err.response?.status === 401 ||
-        err.response?.status === 403
-      ) {
-        setCartMessageType("warning");
-        setCartMessage(
-          "Your session may have expired. Please log in again."
-        );
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        Swal.fire({
+          icon: "warning",
+          title: "Login Required",
+          text: "Your session may have expired. Please log in again.",
+          confirmButtonColor: "#800000",
+        }).then((result) => {
+          if (result.isConfirmed) navigate("/login");
+        });
       } else {
-        setCartMessageType("danger");
-        setCartMessage(
-          typeof data === "string"
-            ? data
-            : data?.message ||
+        Swal.fire({
+          icon: "error",
+          title: "Unable to Add to Cart",
+          text:
+            typeof data === "string"
+              ? data
+              : data?.message ||
                 data?.error ||
-                "Unable to add this shirt to your cart."
-        );
+                "Unable to add this product to your cart. Please try again.",
+          confirmButtonColor: "#800000",
+        });
       }
     } finally {
       setCartLoading(null);
@@ -221,13 +432,11 @@ function Collection() {
         }}
       >
         <div className="container">
-          {/* Collection heading and refresh */}
+
+          {/* COLLECTION HEADING */}
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
             <div>
-              <h2
-                className="fw-bold mb-1"
-                style={{ color: "maroon" }}
-              >
+              <h2 className="fw-bold mb-1" style={{ color: "#800000" }}>
                 Our Collection
               </h2>
 
@@ -247,7 +456,7 @@ function Collection() {
             </button>
           </div>
 
-          {/* Category filters from the backend */}
+          {/* CATEGORY FILTERS */}
           {!loading && !error && products.length > 0 && (
             <div className="d-flex flex-wrap gap-2 mb-4">
               {categories.map((category) => (
@@ -267,37 +476,33 @@ function Collection() {
             </div>
           )}
 
-          {/* Cart message */}
-          {cartMessage && (
+          {/* TOP-RIGHT SUCCESS NOTIFICATION */}
+          {showCartToast && (
             <div
-              className={`alert alert-${cartMessageType} alert-dismissible fade show`}
+              className="reyasa-cart-notification"
               role="status"
+              aria-live="polite"
             >
-              {cartMessage}
+              <i className="bi bi-check-circle-fill" aria-hidden="true"></i>
 
-              <button
-                type="button"
-                className="btn-close"
-                aria-label="Close"
-                onClick={() => setCartMessage("")}
-              ></button>
+              <p className="reyasa-cart-notification-message">
+                {cartMessage}
+              </p>
             </div>
           )}
 
-          {/* Loading */}
+          {/* LOADING */}
           {loading && (
             <div className="text-center py-5">
               <div className="spinner-border" role="status">
-                <span className="visually-hidden">
-                  Loading...
-                </span>
+                <span className="visually-hidden">Loading...</span>
               </div>
 
               <p className="mt-3">Loading collection...</p>
             </div>
           )}
 
-          {/* Error and retry */}
+          {/* ERROR */}
           {!loading && error && (
             <div className="alert alert-danger" role="alert">
               {error}
@@ -312,151 +517,194 @@ function Collection() {
             </div>
           )}
 
-          {/* Empty collection */}
-          {!loading &&
-            !error &&
-            filteredProducts.length === 0 && (
-              <div className="text-center py-5">
-                <i
-                  className="bi bi-bag"
-                  style={{ fontSize: "42px", color: "maroon" }}
-                ></i>
+          {/* EMPTY COLLECTION */}
+          {!loading && !error && filteredProducts.length === 0 && (
+            <div className="text-center py-5">
+              <i
+                className="bi bi-bag"
+                style={{ fontSize: "42px", color: "#800000" }}
+              ></i>
 
-                <h4 className="mt-3">No products available</h4>
+              <h4 className="mt-3">No products available</h4>
 
-                <p className="text-secondary">
-                  {products.length === 0
-                    ? "Products added by the admin will appear here."
-                    : "No products were found in this category."}
-                </p>
-              </div>
-            )}
+              <p className="text-secondary">
+                {products.length === 0
+                  ? "Products added by the admin will appear here."
+                  : "No products were found in this category."}
+              </p>
+            </div>
+          )}
 
-          {/* Products mapped from the backend */}
-          {!loading &&
-            !error &&
-            filteredProducts.length > 0 && (
-              <div className="row g-4">
-                {filteredProducts.map((product) => {
-                  const sizes = getAvailableSizes(
-                    product.availableSizes
-                  );
+          {/* PRODUCT CARDS */}
+          {!loading && !error && filteredProducts.length > 0 && (
+            <div className="row g-4">
+              {filteredProducts.map((product) => {
+                const sizes = getAvailableSizes(product.availableSizes);
+                const outOfStock = Number(product.stockQuantity) <= 0;
+                const addedToWishlist = isInWishlist(product.id);
 
-                  const outOfStock =
-                    Number(product.stockQuantity) <= 0;
+                return (
+                  <div
+                    className="col-12 col-sm-6 col-lg-4 col-xl-3"
+                    key={product.id}
+                  >
+                    <div className="card h-100 border-0 shadow rounded-3 overflow-hidden">
 
-                  const selectedSize =
-                    selectedSizes[product.id] || sizes[0] || "";
+                      {/* PRODUCT IMAGE */}
+                      <Link
+                        to={`/product/${product.id}`}
+                        className="d-block text-decoration-none"
+                        aria-label={`View ${product.name} details`}
+                      >
+                        <div
+                          className="position-relative bg-light overflow-hidden"
+                          style={{ aspectRatio: "3 / 4" }}
+                        >
+                          {product.imageKey ? (
+                            <img
+                              src={getImageUrl(product.imageKey)}
+                              alt={product.name || "REYASA shirt"}
+                              className="w-100 h-100"
+                              style={{
+                                objectFit: "cover",
+                                objectPosition: "center",
+                                transition: "transform 0.5s ease",
+                              }}
+                              loading="lazy"
+                              onMouseEnter={(event) => {
+                                event.currentTarget.style.transform = "scale(1.15)";
+                              }}
+                              onMouseLeave={(event) => {
+                                event.currentTarget.style.transform = "scale(1)";
+                              }}
+                              onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="h-100 d-flex align-items-center justify-content-center text-secondary">
+                              <i className="bi bi-image fs-1"></i>
+                            </div>
+                          )}
 
-                  return (
-                    <div
-                      className="col-12 col-sm-6 col-lg-4 col-xl-3"
-                      key={product.id}
-                    >
-                      <div className="card h-100 border-0 shadow rounded-3 overflow-hidden">
-                        {/* Click the image to open product details */}
+                          {/* WISHLIST HEART */}
+                          <button
+                            type="button"
+                            className="btn btn-light rounded-circle shadow-sm position-absolute top-0 end-0 m-3 d-flex align-items-center justify-content-center"
+                            style={{
+                              width: "42px",
+                              height: "42px",
+                              zIndex: 2,
+                            }}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleWishlist(product);
+                            }}
+                            disabled={wishlistLoading === product.id}
+                            aria-label={
+                              addedToWishlist
+                                ? "Remove from wishlist"
+                                : "Add to wishlist"
+                            }
+                            title={
+                              addedToWishlist
+                                ? "Remove from wishlist"
+                                : "Add to wishlist"
+                            }
+                          >
+                            {wishlistLoading === product.id ? (
+                              <span
+                                className="spinner-border spinner-border-sm"
+                                role="status"
+                              ></span>
+                            ) : (
+                              <i
+                                className={`bi ${
+                                  addedToWishlist
+                                    ? "bi-heart-fill text-danger"
+                                    : "bi-heart text-dark"
+                                }`}
+                                style={{ fontSize: "20px" }}
+                              ></i>
+                            )}
+                          </button>
+
+                          {/* STOCK BADGE */}
+                          {outOfStock && (
+                            <span className="badge text-bg-secondary position-absolute top-0 start-0 m-3">
+                              Out of Stock
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+
+                      {/* PRODUCT DETAILS */}
+                      <div className="card-body p-3 d-flex flex-column">
                         <Link
                           to={`/product/${product.id}`}
-                          className="d-block text-decoration-none"
-                          aria-label={`View details of ${product.name}`}
+                          className="text-decoration-none text-dark"
                         >
-                          <div
-                            className="position-relative bg-light overflow-hidden"
-                            style={{ aspectRatio: "3 / 4" }}
-                          >
-                            {product.imageKey ? (
-                              <img
-                                src={getImageUrl(product.imageKey)}
-                                alt={product.name || "REYASA shirt"}
-                                className="w-100 h-100"
-                                style={{
-                                  objectFit: "cover",
-                                  objectPosition: "center",
-                                }}
-                                loading="lazy"
-                                onError={(event) => {
-                                  event.currentTarget.style.display =
-                                    "none";
-                                }}
-                              />
-                            ) : (
-                              <div className="h-100 d-flex align-items-center justify-content-center text-secondary">
-                                No image available
-                              </div>
-                            )}
-
-                            {product.trending && (
-                              <span className="badge text-bg-danger position-absolute top-0 end-0 m-3">
-                                <i className="bi bi-fire me-1"></i>
-                                Trending
-                              </span>
-                            )}
-
-                            {outOfStock && (
-                              <span className="badge text-bg-secondary position-absolute top-0 start-0 m-3">
-                                Out of Stock
-                              </span>
-                            )}
-                          </div>
-                        </Link>
-
-                        {/* Product information */}
-                        <div className="card-body d-flex flex-column p-3">
-                          <p className="small text-uppercase text-secondary mb-1">
-                            {product.category}
-                          </p>
-
-                          <h5 className="card-title fw-bold mb-2">
+                          <h5 className="card-title fw-bold text-center mb-3">
                             {product.name}
                           </h5>
+                        </Link>
 
-                          <p className="card-text text-secondary small mb-3">
-                            {product.description
-                              ? product.description.length > 100
-                                ? `${product.description.slice(0, 100)}...`
-                                : product.description
-                              : "Discover your everyday style with REYASA."}
-                          </p>
+                        {/* SIZE SELECTION */}
+                        {sizes.length > 0 && (
+                          <div className="mb-3">
+                            <label
+                              htmlFor={`size-${product.id}`}
+                              className="form-label fw-semibold"
+                            >
+                              Select Size <span className="text-danger">*</span>
+                            </label>
 
-                          <h5 className="fw-bold mb-3">
-                            ₹
-                            {Number(product.price).toLocaleString(
-                              "en-IN"
-                            )}
-                          </h5>
-
-                         
-
-                          {/* Add to cart */}
-                          <div className="mt-auto d-grid">
-                            <button
-                              type="button"
-                              className="btn btn-dark"
-                              disabled={
-                                outOfStock ||
-                                sizes.length === 0 ||
-                                cartLoading === product.id
-                              }
-                              onClick={() =>
-                                handleAddToCart(product)
+                            <select
+                              id={`size-${product.id}`}
+                              className="form-select"
+                              value={selectedSizes[product.id] || ""}
+                              onChange={(event) =>
+                                handleSizeChange(product.id, event.target.value)
                               }
                             >
-                              {cartLoading === product.id
-                                ? "Adding..."
-                                : outOfStock
-                                  ? "Out of Stock"
-                                  : sizes.length === 0
-                                    ? "No Sizes Available"
-                                    : "Add to Cart"}
-                            </button>
+                              <option value="">-- Please Select Size --</option>
+
+                              {sizes.map((size) => (
+                                <option key={size} value={size}>
+                                  {size}
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                        </div>
+                        )}
+
+                        {/* ADD TO CART */}
+                        <button
+                          type="button"
+                          className="btn btn-dark w-100 mt-auto"
+                          disabled={
+                            outOfStock ||
+                            sizes.length === 0 ||
+                            cartLoading === product.id
+                          }
+                          onClick={() => handleAddToCart(product)}
+                        >
+                          {cartLoading === product.id
+                            ? "Adding..."
+                            : outOfStock
+                              ? "Out of Stock"
+                              : sizes.length === 0
+                                ? "No Sizes Available"
+                                : "Add to Cart"}
+                        </button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </main>

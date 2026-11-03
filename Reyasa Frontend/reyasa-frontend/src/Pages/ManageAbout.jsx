@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import AboutServices from "../services/AboutServices";
 import heroBackground from "../assets/reyasa-background.png";
@@ -27,6 +26,9 @@ function ManageAbout() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const notificationTimer = useRef(null);
+
+  // Load About Us content
   const loadAboutUs = async () => {
     setLoading(true);
     setError("");
@@ -34,7 +36,6 @@ function ManageAbout() {
 
     try {
       const response = await AboutServices.getAboutUs();
-
       const data = response?.data ?? response;
 
       setAbout({
@@ -55,8 +56,29 @@ function ManageAbout() {
 
   useEffect(() => {
     loadAboutUs();
+
+    return () => {
+      if (notificationTimer.current) {
+        clearTimeout(notificationTimer.current);
+      }
+    };
   }, []);
 
+  // Show the success popup for 3 seconds
+  const showSuccessNotification = (text) => {
+    if (notificationTimer.current) {
+      clearTimeout(notificationTimer.current);
+    }
+
+    setMessage(text);
+
+    notificationTimer.current = setTimeout(() => {
+      setMessage("");
+      notificationTimer.current = null;
+    }, 3000);
+  };
+
+  // Handle form inputs
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -69,6 +91,7 @@ function ManageAbout() {
     setError("");
   };
 
+  // Save About Us content
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -95,7 +118,7 @@ function ManageAbout() {
         ...(data || {}),
       }));
 
-      setMessage("About Us content updated successfully!");
+      showSuccessNotification("About Us content updated successfully!");
     } catch (err) {
       console.error("Error updating About Us:", err);
 
@@ -116,6 +139,7 @@ function ManageAbout() {
     }
   };
 
+  // Render paragraph textareas
   const renderTextarea = (label, name, rows = 4) => (
     <div className="mb-4" key={name}>
       <label htmlFor={name} className="form-label fw-semibold">
@@ -150,6 +174,24 @@ function ManageAbout() {
         boxSizing: "border-box",
       }}
     >
+      {/* SUCCESS POPUP */}
+      {message && (
+        <div
+          className="reyasa-cart-notification"
+          role="status"
+          aria-live="polite"
+        >
+          <i
+            className="bi bi-check-circle-fill"
+            aria-hidden="true"
+          ></i>
+
+          <p className="reyasa-cart-notification-message">
+            {message}
+          </p>
+        </div>
+      )}
+
       <div className="container">
         {/* PAGE HEADING */}
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
@@ -181,28 +223,24 @@ function ManageAbout() {
             </p>
           </div>
 
-          <Link
-            to="/about"
-            className="btn btn-dark px-4"
-          >
+          <Link to="/about" className="btn btn-dark px-4">
             <i className="bi bi-eye me-2"></i>
             Preview Page
           </Link>
         </div>
-
-        {/* SUCCESS MESSAGE */}
-        {message && (
-          <div className="alert alert-success" role="status">
-            <i className="bi bi-check-circle me-2"></i>
-            {message}
-          </div>
-        )}
 
         {/* ERROR MESSAGE */}
         {error && (
           <div className="alert alert-danger" role="alert">
             <i className="bi bi-exclamation-triangle me-2"></i>
             {error}
+
+            <button
+              type="button"
+              className="btn-close float-end"
+              aria-label="Close"
+              onClick={() => setError("")}
+            ></button>
           </div>
         )}
 
@@ -313,7 +351,7 @@ function ManageAbout() {
                   <button
                     type="submit"
                     className="btn btn-dark px-4"
-                    disabled={saving}
+                    disabled={saving || loading}
                   >
                     {saving ? (
                       <>

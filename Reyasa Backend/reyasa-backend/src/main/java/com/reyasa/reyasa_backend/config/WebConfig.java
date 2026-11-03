@@ -1,4 +1,3 @@
-
 package com.reyasa.reyasa_backend.config;
 
 import org.springframework.context.annotation.Configuration;
