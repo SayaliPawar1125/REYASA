@@ -1,9 +1,10 @@
+
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import reyasaBackground from "../assets/reyasa-background.png";
 
 const API_URL = "http://localhost:8080";
-const RAZORPAY_KEY_ID = "YOUR_RAZORPAY_KEY_ID";
+const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
 const initialAddress = {
   fullName: "",
@@ -280,31 +281,8 @@ function Checkout() {
     return "";
   };
 
-  // Verify Razorpay payment on the backend.
-  const verifyPayment = async (paymentResponse) => {
-    const response = await fetch(`${API_URL}/api/payment/verify`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        razorpay_order_id: paymentResponse.razorpay_order_id,
-        razorpay_payment_id: paymentResponse.razorpay_payment_id,
-        razorpay_signature: paymentResponse.razorpay_signature,
-      }),
-    });
-
-    const result = await response.json().catch(() => ({}));
-
-    if (!response.ok || result.verified !== true) {
-      throw new Error(
-        result.message ||
-          "Payment verification failed. Your order has not been confirmed."
-      );
-    }
-
-    return result;
-  };
-
-  // Place an order containing only the selected cart item IDs.
+  // Place an order containing only the selected cart items.
+  // Backend verifies Razorpay payment before saving the order.
   const placeOrderAfterPayment = async (paymentResponse) => {
     const response = await fetch(
       `${API_URL}/api/customer/orders/place`,
@@ -312,14 +290,22 @@ function Checkout() {
         method: "POST",
         headers,
         body: JSON.stringify({
-          userId: Number(userId),
-
-          // Important: backend must place only these selected cart items.
           selectedCartItemIds: selectedCartItemIds.map(Number),
 
-          ...address,
-          paymentId: paymentResponse.razorpay_payment_id,
+          // Delivery address
+          fullName: address.fullName,
+          phone: address.phone,
+          addressLine: address.addressLine,
+          area: address.area,
+          city: address.city,
+          state: address.state,
+          pinCode: address.pinCode,
+          landmark: address.landmark,
+
+          // Razorpay payment details
           paymentOrderId: paymentResponse.razorpay_order_id,
+          paymentId: paymentResponse.razorpay_payment_id,
+          razorpaySignature: paymentResponse.razorpay_signature,
         }),
       }
     );
@@ -337,7 +323,7 @@ function Checkout() {
     return result;
   };
 
-  // Pay Now: create Razorpay order, open checkout, verify, then place order.
+  // Pay Now: create Razorpay order, open checkout, and place customer order.
   const handlePayNow = async (event) => {
     event.preventDefault();
 
@@ -356,7 +342,7 @@ function Checkout() {
       RAZORPAY_KEY_ID === "YOUR_RAZORPAY_KEY_ID"
     ) {
       setError(
-        "Configure your Razorpay Key ID in Checkout.jsx before testing payments."
+        "Configure your Razorpay Key ID in your frontend .env file before testing payments."
       );
       return;
     }
@@ -379,9 +365,6 @@ function Checkout() {
           method: "POST",
           headers,
           body: JSON.stringify({
-            userId: Number(userId),
-
-            // Backend must calculate the amount from these cart item IDs.
             selectedCartItemIds: selectedCartItemIds.map(Number),
           }),
         }
@@ -413,12 +396,11 @@ function Checkout() {
 
         handler: async (paymentResponse) => {
           try {
-            setPaymentMessage("Verifying your payment...");
+            setPaymentMessage(
+              "Verifying payment and confirming your order..."
+            );
 
-            await verifyPayment(paymentResponse);
-
-            setPaymentMessage("Payment verified. Confirming your order...");
-
+            // Backend verifies the Razorpay signature and saves the order.
             const orderResult =
               await placeOrderAfterPayment(paymentResponse);
 
@@ -431,7 +413,7 @@ function Checkout() {
             setPaymentMessage("");
 
             // Clear only the checkout display.
-            // The backend must remove purchased cart rows only.
+            // The backend removes purchased cart rows only.
             setCart({
               items: [],
               subtotal: 0,

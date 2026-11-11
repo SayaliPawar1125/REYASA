@@ -314,9 +314,8 @@ function Navbar() {
 
           <div
             id="reyasaNavbar"
-            className={`reyasa-nav-content ${
-              menuOpen ? "open" : ""
-            }`}
+            className={`reyasa-nav-content ${menuOpen ? "open" : ""
+              }`}
           >
 
             <div className="reyasa-nav-links">
@@ -352,6 +351,17 @@ function Navbar() {
               >
                 Enquiry
               </Link>
+
+
+              {isLoggedIn && (
+                <Link
+                  to="/my-orders"
+                  className="nav-link"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  My Orders
+                </Link>
+              )}
 
             </div>
 

@@ -8,26 +8,31 @@ const DEFAULT_FOOTER = {
   tagline: "Created with passion. Worn with love.",
   description:
     "Discover thoughtfully designed shirts that combine timeless style with everyday comfort.",
+
   quickLinks: [
     { label: "Home", url: "/" },
     { label: "Collection", url: "/collection" },
     { label: "About Us", url: "/about" },
-    { label: "Contact", url: "/contact" },
+    { label: "Enquiries", url: "/enquiries" },
   ],
+
   phone: "+91 98765 43210",
   email: "reyasa@gmail.com",
   address: "Mumbai, Maharashtra, India",
+
   socialLinks: [
     { label: "Instagram", url: "https://instagram.com" },
     { label: "Facebook", url: "https://facebook.com" },
     { label: "Twitter", url: "https://twitter.com" },
   ],
+
   policyLinks: [
     { label: "Privacy Policy", url: "/privacy-policy" },
     { label: "Terms & Conditions", url: "/terms-and-conditions" },
     { label: "Shipping Policy", url: "/shipping-policy" },
     { label: "Return Policy", url: "/return-policy" },
   ],
+
   copyright: "© 2026 REYASA. All Rights Reserved.",
 };
 
@@ -43,17 +48,20 @@ function Footer() {
 
         if (!active) return;
 
-        const data = response.data;
+        const data = response.data || {};
 
         setFooter({
           ...DEFAULT_FOOTER,
           ...data,
+
           quickLinks: Array.isArray(data.quickLinks)
             ? data.quickLinks
             : DEFAULT_FOOTER.quickLinks,
+
           socialLinks: Array.isArray(data.socialLinks)
             ? data.socialLinks
             : DEFAULT_FOOTER.socialLinks,
+
           policyLinks: Array.isArray(data.policyLinks)
             ? data.policyLinks
             : DEFAULT_FOOTER.policyLinks,
@@ -63,7 +71,6 @@ function Footer() {
           "Unable to load REYASA footer settings:",
           error
         );
-        // Keep the default footer if the backend is unavailable.
       }
     };
 
@@ -75,7 +82,10 @@ function Footer() {
   }, []);
 
   const renderLink = (item, index) => {
-    if (!item?.label?.trim() || !item?.url?.trim()) {
+    if (
+      !item?.label?.trim() ||
+      !item?.url?.trim()
+    ) {
       return null;
     }
 
@@ -106,18 +116,18 @@ function Footer() {
 
   return (
     <footer
-      className="text-white border-top border-light border-opacity-10 py-5"
-      style={{
-        backgroundColor: "rgba(0, 0, 0, 0.85)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-      }}
+      className="text-white border-top border-light border-opacity-10 py-4"
+      style={{ backgroundColor: "#111111" }}
     >
-      <div className="container">
-        <div className="row gy-4">
+      <div className="container-fluid px-4">
+
+        {/* FOOTER SECTIONS */}
+
+        <div className="row align-items-start justify-content-between g-4">
 
           {/* BRAND INFORMATION */}
-          <div className="col-12 col-md-6 col-lg-3">
+
+          <div className="col-12 col-lg-2">
             <h4 className="text-white fw-bold mb-2">
               {footer.brandName}
             </h4>
@@ -136,7 +146,8 @@ function Footer() {
           </div>
 
           {/* QUICK LINKS */}
-          <div className="col-12 col-md-6 col-lg-3">
+
+          <div className="col-6 col-lg-2">
             <h5 className="text-white fw-bold mb-3">
               Quick Links
             </h5>
@@ -147,15 +158,18 @@ function Footer() {
           </div>
 
           {/* CONTACT INFORMATION */}
-          <div className="col-12 col-md-6 col-lg-3">
+
+          <div className="col-6 col-lg-3">
             <h5 className="text-white fw-bold mb-3">
               Contact Us
             </h5>
 
             <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
+
               {footer.phone && (
                 <li>
                   <i className="bi bi-telephone me-2"></i>
+
                   <a
                     href={`tel:${footer.phone.replace(/[^\d+]/g, "")}`}
                     className="text-white-50 text-decoration-none"
@@ -168,6 +182,7 @@ function Footer() {
               {footer.email && (
                 <li className="text-break">
                   <i className="bi bi-envelope me-2"></i>
+
                   <a
                     href={`mailto:${footer.email}`}
                     className="text-white-50 text-decoration-none"
@@ -183,39 +198,44 @@ function Footer() {
                   {footer.address}
                 </li>
               )}
+
             </ul>
           </div>
 
-          {/* SOCIAL LINKS AND POLICIES */}
-          <div className="col-12 col-md-6 col-lg-3">
+          {/* SOCIAL LINKS */}
+
+          <div className="col-6 col-lg-2">
             <h5 className="text-white fw-bold mb-3">
               Follow Us
             </h5>
 
-            <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-4">
+            <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
               {footer.socialLinks.map(renderLink)}
             </ul>
-
-            {footer.policyLinks.length > 0 && (
-              <>
-                <h6 className="text-white fw-bold mb-3">
-                  Customer Information
-                </h6>
-
-                <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
-                  {footer.policyLinks.map(renderLink)}
-                </ul>
-              </>
-            )}
           </div>
+
+          {/* CUSTOMER INFORMATION */}
+
+          <div className="col-6 col-lg-2">
+            <h5 className="text-white fw-bold mb-3">
+              Policy
+            </h5>
+
+            <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
+              {footer.policyLinks.map(renderLink)}
+            </ul>
+          </div>
+
         </div>
 
         {/* COPYRIGHT */}
-        <div className="row mt-5 pt-4 border-top border-light border-opacity-10">
+
+        <div className="row mt-4 pt-3 border-top border-light border-opacity-10">
           <div className="col-12 text-center text-white-50 small">
             {footer.copyright}
           </div>
         </div>
+
       </div>
     </footer>
   );

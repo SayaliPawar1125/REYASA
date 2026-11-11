@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
+                                "/api/auth/google",
                                 "/error"
                         ).permitAll()
 
@@ -65,6 +66,8 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/enquiries").permitAll()
+
+
 
                         // Admin delivery PIN management
                         .requestMatchers(
@@ -163,6 +166,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/wishlist", "/api/wishlist/**")
                         .hasAnyRole("USER", "ADMIN")
                         // Everything else requires authentication
+
+                        .requestMatchers("/api/customer/orders/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/payment/**").hasAnyRole("USER", "ADMIN")
+
+                        // Public forgot password OTP APIs
+                        .requestMatchers(
+                                "/api/auth/forgot-password/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
 

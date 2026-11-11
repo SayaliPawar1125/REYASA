@@ -2,9 +2,9 @@
 package com.reyasa.reyasa_backend.controllers;
 
 import com.reyasa.reyasa_backend.dto.LoginRequest;
-
 import com.reyasa.reyasa_backend.dto.LoginResponse;
 import com.reyasa.reyasa_backend.dto.RegisterRequest;
+import com.reyasa.reyasa_backend.dto.GoogleLoginRequest;
 import com.reyasa.reyasa_backend.entities.User;
 import com.reyasa.reyasa_backend.services.UserService;
 
@@ -45,12 +45,23 @@ public class AuthController {
         );
     }
 
-    // LOGIN
+    // EMAIL AND PASSWORD LOGIN
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
         LoginResponse response = userService.login(request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // GOOGLE LOGIN
+    @PostMapping("/google")
+    public ResponseEntity<LoginResponse> googleLogin(
+            @Valid @RequestBody GoogleLoginRequest request) {
+
+        LoginResponse response =
+                userService.loginWithGoogle(request);
 
         return ResponseEntity.ok(response);
     }

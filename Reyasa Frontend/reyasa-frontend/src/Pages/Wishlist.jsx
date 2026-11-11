@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -90,14 +91,32 @@ function Wishlist() {
   // LOAD WISHLIST
   const loadWishlist = async () => {
     try {
-      if (!localStorage.getItem("token")) {
-        navigate("/login");
+      const token = localStorage.getItem("token");
+
+      // CHECK CUSTOMER LOGIN
+      if (!token) {
+        setLoading(false);
+
+        const result = await showMaroonPopup({
+          icon: "warning",
+          title: "Login Required!",
+          text: "Please login to your REYASA account to view your wishlist.",
+          confirmButtonText: "Login Now",
+          allowOutsideClick: false,
+        });
+
+        if (result.isConfirmed) {
+          navigate("/login");
+        }
+
         return;
       }
 
+      // LOAD CUSTOMER WISHLIST
       const response = await WishlistService.getWishlist();
 
       setWishlist(Array.isArray(response.data) ? response.data : []);
+
     } catch (error) {
       console.error("Wishlist error:", error);
 
@@ -105,10 +124,12 @@ function Wishlist() {
         await showMaroonPopup({
           icon: "warning",
           title: "Please Login",
-          text: "Please login to view your wishlist.",
+          text: "Your session has expired. Please login again.",
+          confirmButtonText: "Login Now",
         });
 
         navigate("/login");
+
       } else {
         showMaroonPopup({
           icon: "error",
@@ -116,6 +137,7 @@ function Wishlist() {
           text: "Unable to load wishlist.",
         });
       }
+
     } finally {
       setLoading(false);
     }
@@ -197,6 +219,7 @@ function Wishlist() {
       showSuccessToast(
         `${product.name} (${size}) added to cart successfully.`
       );
+
     } catch (error) {
       console.error("Add to cart error:", error);
 
@@ -207,6 +230,7 @@ function Wishlist() {
           error.response?.data?.message ||
           "Unable to add this product to your cart. Please try again.",
       });
+
     } finally {
       setAddingId(null);
     }
@@ -254,6 +278,7 @@ function Wishlist() {
         title: "Error",
         text: "Unable to remove product from wishlist.",
       });
+
     } finally {
       setRemovingId(null);
     }

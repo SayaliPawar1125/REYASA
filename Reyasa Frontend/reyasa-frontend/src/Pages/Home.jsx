@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -401,6 +402,22 @@ function Home() {
                 <br />
                 Own the moment.
               </p>
+
+              {/* EXPLORE OUR COLLECTION BUTTON */}
+              <button
+                type="button"
+                className="btn btn-lg mt-3 px-5 py-3 text-white fw-semibold"
+                style={{
+                  backgroundColor: "#800000",
+                  borderColor: "#800000",
+                  borderRadius: "4px",
+                }}
+                onClick={() => navigate("/collection")}
+              >
+                Explore Our Collection
+                <i className="bi bi-arrow-right ms-2"></i>
+              </button>
+
             </div>
           </div>
         </div>
@@ -658,20 +675,7 @@ function Home() {
                           {product.name}
                         </h6>
 
-                        {product.description && (
-                          <p
-                            className="text-muted small mb-2"
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {product.description}
-                          </p>
-                        )}
-
+                       
                         {/* SIZE SELECTOR */}
                         <div
                           className="mb-3"

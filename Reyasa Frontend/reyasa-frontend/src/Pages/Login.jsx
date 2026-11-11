@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
+
 import heroBackground from '../assets/reyasa-background.png';
 import AuthService from '../services/AuthService';
 
@@ -14,6 +16,28 @@ function Login() {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Save login details and redirect
+  const completeLogin = (data) => {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('userId', data.id);
+    localStorage.setItem('firstname', data.firstName || '');
+    localStorage.setItem('lastname', data.lastName || '');
+    localStorage.setItem(
+      'username',
+      data.email || formData.email.trim()
+    );
+    localStorage.setItem('role', data.role);
+
+    window.dispatchEvent(new Event('authChanged'));
+
+    if (data.role === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+    } else {
+      navigate('/profile', { replace: true });
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,6 +50,7 @@ function Login() {
     setErrorMessage('');
   };
 
+  // Existing email and password login
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -38,24 +63,7 @@ function Login() {
         password: formData.password
       });
 
-      const data = response.data;
-
-      localStorage.setItem('token', data.token);
-      window.dispatchEvent(new Event("authChanged"));
-      localStorage.setItem('userId', data.id);
-      localStorage.setItem('firstname', data.firstName || '');
-      localStorage.setItem('lastname', data.lastName || '');
-      localStorage.setItem(
-        'username',
-        data.email || formData.email.trim()
-      );
-      localStorage.setItem('role', data.role);
-
-      if (data.role === 'ADMIN') {
-        navigate('/admin/dashboard', { replace: true });
-      } else {
-        navigate('/profile', { replace: true });
-      }
+      completeLogin(response.data);
 
     } catch (error) {
       console.error('Login error:', error);
@@ -96,6 +104,44 @@ function Login() {
     }
   };
 
+  // Google login
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setErrorMessage('');
+
+    if (!credentialResponse.credential) {
+      setErrorMessage('Google login failed. Please try again.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Backend verifies the Google ID token
+      const response = await AuthService.googleLogin({
+        credential: credentialResponse.credential
+      });
+
+      completeLogin(response.data);
+
+    } catch (error) {
+      console.error('Google login error:', error);
+
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        'Google login failed. Please try again.';
+
+      setErrorMessage(message);
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setErrorMessage('Google sign-in was unsuccessful. Please try again.');
+  };
+
   return (
     <section
       className="min-vh-100 d-flex align-items-center py-5"
@@ -122,6 +168,26 @@ function Login() {
 
                 <div className="text-center mb-4">
                   <h3 className="text-white mt-3">Login</h3>
+                </div>
+
+                {/* GOOGLE LOGIN */}
+                <div className="d-flex justify-content-center mb-3">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    theme="filled_black"
+                    shape="rectangular"
+                    size="large"
+                    text="continue_with"
+                    width="300"
+                  />
+                </div>
+
+                {/* OR DIVIDER */}
+                <div className="d-flex align-items-center my-4">
+                  <hr className="flex-grow-1 border-light" />
+                  <span className="text-white-50 px-3 small">OR</span>
+                  <hr className="flex-grow-1 border-light" />
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -157,17 +223,36 @@ function Login() {
                       Password
                     </label>
 
-                    <input
-                      id="password"
-                      type="password"
-                      name="password"
-                      className="form-control bg-transparent text-white border-light"
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      autoComplete="current-password"
-                      required
-                    />
+                    <div className="input-group">
+                      <input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        className="form-control bg-transparent text-white border-light"
+                        placeholder="Enter your password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        autoComplete="current-password"
+                        required
+                      />
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-light"
+                        onClick={() =>
+                          setShowPassword((previous) => !previous)
+                        }
+                        aria-label={
+                          showPassword ? 'Hide password' : 'Show password'
+                        }
+                      >
+                        <i
+                          className={`bi ${
+                            showPassword ? 'bi-eye-slash' : 'bi-eye'
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
                   </div>
 
                   {/* FORGOT PASSWORD */}

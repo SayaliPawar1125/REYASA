@@ -20,6 +20,10 @@ function Register() {
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const validateName = (value, fieldName) => {
     const name = value.trim();
 
@@ -373,24 +377,41 @@ function Register() {
                       Password
                     </label>
 
-                    <input
-                      id="password"
-                      type="password"
-                      className={inputClass("password")}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Create a password"
-                      minLength={8}
-                      maxLength={64}
-                      autoComplete="new-password"
-                      required
-                      aria-invalid={Boolean(fieldErrors.password)}
-                      aria-describedby="passwordError"
-                    />
+                    <div className="input-group">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        className={inputClass("password")}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Create a password"
+                        minLength={8}
+                        maxLength={64}
+                        autoComplete="new-password"
+                        required
+                        aria-invalid={Boolean(fieldErrors.password)}
+                        aria-describedby="passwordError"
+                      />
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-light"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        <i
+                          className={`bi ${
+                            showPassword ? "bi-eye-slash" : "bi-eye"
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
 
                     {fieldErrors.password && (
-                      <div id="passwordError" className="invalid-feedback">
+                      <div id="passwordError" className="text-danger small mt-1">
                         {fieldErrors.password}
                       </div>
                     )}
@@ -410,24 +431,45 @@ function Register() {
                       Confirm Password
                     </label>
 
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      className={inputClass("confirmPassword")}
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Confirm your password"
-                      autoComplete="new-password"
-                      required
-                      aria-invalid={Boolean(fieldErrors.confirmPassword)}
-                      aria-describedby="confirmPasswordError"
-                    />
+                    <div className="input-group">
+                      <input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        className={inputClass("confirmPassword")}
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Confirm your password"
+                        autoComplete="new-password"
+                        required
+                        aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                        aria-describedby="confirmPasswordError"
+                      />
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-light"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide confirm password"
+                            : "Show confirm password"
+                        }
+                      >
+                        <i
+                          className={`bi ${
+                            showConfirmPassword ? "bi-eye-slash" : "bi-eye"
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
 
                     {fieldErrors.confirmPassword && (
                       <div
                         id="confirmPasswordError"
-                        className="invalid-feedback"
+                        className="text-danger small mt-1"
                       >
                         {fieldErrors.confirmPassword}
                       </div>

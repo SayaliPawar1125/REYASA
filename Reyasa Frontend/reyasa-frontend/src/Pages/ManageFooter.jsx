@@ -377,6 +377,24 @@ function ManageFooter() {
       (link) => link.label?.trim() && link.url?.trim()
     );
 
+  // PREVIEW LINK
+  const renderPreviewLink = (link, index, section) => {
+    const isExternal = /^https?:\/\//i.test(link.url);
+
+    return (
+      <li key={`${section}-${link.label}-${index}`}>
+        <a
+          href={link.url}
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
+          className="text-white-50 text-decoration-none"
+        >
+          {link.label}
+        </a>
+      </li>
+    );
+  };
+
   return (
     <main
       className="container-fluid px-3 px-md-4 pb-5"
@@ -730,58 +748,76 @@ function ManageFooter() {
             </p>
           </div>
 
+          {/* FOOTER PREVIEW - SAME DESIGN AS FOOTER.JSX */}
           <footer
-            className="text-white border-top border-light border-opacity-10 py-5"
-            style={{ backgroundColor: "rgba(0, 0, 0, 0.9)" }}
+            className="text-white border-top border-light border-opacity-10 py-4"
+            style={{ backgroundColor: "#111111" }}
           >
-            <div className="container-fluid">
-              <div className="row gy-4">
-                {/* BRAND */}
-                <div className="col-12 col-md-6 col-lg-3">
-                  <h4 className="fw-bold text-white">
+            <div className="container-fluid px-4">
+              {/* FOOTER SECTIONS */}
+              <div className="row align-items-start justify-content-between g-4">
+                {/* BRAND INFORMATION */}
+                <div className="col-12 col-lg-2">
+                  <h4 className="text-white fw-bold mb-2">
                     {footer.brandName || "REYASA"}
                   </h4>
 
-                  <p className="small text-white-50">
-                    {footer.tagline}
-                  </p>
+                  {footer.tagline && (
+                    <p className="text-white-50 small mb-2">
+                      {footer.tagline}
+                    </p>
+                  )}
 
-                  <p className="small text-white-50">
-                    {footer.description}
-                  </p>
+                  {footer.description && (
+                    <p className="text-white-50 small mb-0">
+                      {footer.description}
+                    </p>
+                  )}
                 </div>
 
                 {/* QUICK LINKS */}
-                <div className="col-12 col-md-6 col-lg-3">
-                  <h6 className="fw-bold mb-3">Quick Links</h6>
+                <div className="col-6 col-lg-2">
+                  <h5 className="text-white fw-bold mb-3">
+                    Quick Links
+                  </h5>
 
                   <ul className="list-unstyled small d-flex flex-column gap-2 mb-0">
-                    {previewLinks(footer.quickLinks).map((link, index) => (
-                      <li key={`preview-quick-${index}`}>
-                        <span className="text-white-50">
-                          {link.label}
-                        </span>
-                      </li>
-                    ))}
+                    {previewLinks(footer.quickLinks).map((link, index) =>
+                      renderPreviewLink(link, index, "quick")
+                    )}
                   </ul>
                 </div>
 
-                {/* CONTACT */}
-                <div className="col-12 col-md-6 col-lg-3">
-                  <h6 className="fw-bold mb-3">Contact Us</h6>
+                {/* CONTACT INFORMATION */}
+                <div className="col-6 col-lg-3">
+                  <h5 className="text-white fw-bold mb-3">
+                    Contact Us
+                  </h5>
 
-                  <ul className="list-unstyled small text-white-50 d-flex flex-column gap-2 mb-0">
+                  <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
                     {footer.phone && (
                       <li>
                         <i className="bi bi-telephone me-2"></i>
-                        {footer.phone}
+
+                        <a
+                          href={`tel:${footer.phone.replace(/[^\d+]/g, "")}`}
+                          className="text-white-50 text-decoration-none"
+                        >
+                          {footer.phone}
+                        </a>
                       </li>
                     )}
 
                     {footer.email && (
                       <li className="text-break">
                         <i className="bi bi-envelope me-2"></i>
-                        {footer.email}
+
+                        <a
+                          href={`mailto:${footer.email}`}
+                          className="text-white-50 text-decoration-none"
+                        >
+                          {footer.email}
+                        </a>
                       </li>
                     )}
 
@@ -794,38 +830,38 @@ function ManageFooter() {
                   </ul>
                 </div>
 
-                {/* SOCIAL AND POLICY LINKS */}
-                <div className="col-12 col-md-6 col-lg-3">
-                  <h6 className="fw-bold mb-3">Follow Us</h6>
+                {/* SOCIAL LINKS */}
+                <div className="col-6 col-lg-2">
+                  <h5 className="text-white fw-bold mb-3">
+                    Follow Us
+                  </h5>
 
-                  <ul className="list-unstyled small d-flex flex-column gap-2 mb-3">
-                    {previewLinks(footer.socialLinks).map((link, index) => (
-                      <li key={`preview-social-${index}`}>
-                        <span className="text-white-50">
-                          {link.label}
-                        </span>
-                      </li>
-                    ))}
+                  <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
+                    {previewLinks(footer.socialLinks).map((link, index) =>
+                      renderPreviewLink(link, index, "social")
+                    )}
                   </ul>
+                </div>
 
-                  <h6 className="fw-bold mb-2">Policies</h6>
+                {/* CUSTOMER INFORMATION */}
+                <div className="col-6 col-lg-2">
+                  <h5 className="text-white fw-bold mb-3">
+                    Policy
+                  </h5>
 
-                  <ul className="list-unstyled small d-flex flex-column gap-2 mb-0">
-                    {previewLinks(footer.policyLinks).map((link, index) => (
-                      <li key={`preview-policy-${index}`}>
-                        <span className="text-white-50">
-                          {link.label}
-                        </span>
-                      </li>
-                    ))}
+                  <ul className="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
+                    {previewLinks(footer.policyLinks).map((link, index) =>
+                      renderPreviewLink(link, index, "policy")
+                    )}
                   </ul>
                 </div>
               </div>
 
-              <div className="border-top border-light border-opacity-10 mt-5 pt-4 text-center">
-                <p className="text-white-50 small mb-0">
+              {/* COPYRIGHT */}
+              <div className="row mt-4 pt-3 border-top border-light border-opacity-10">
+                <div className="col-12 text-center text-white-50 small">
                   {footer.copyright}
-                </p>
+                </div>
               </div>
             </div>
           </footer>

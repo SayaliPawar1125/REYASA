@@ -4,17 +4,23 @@ package com.reyasa.reyasa_backend.services;
 import com.reyasa.reyasa_backend.entities.Enquiry;
 import com.reyasa.reyasa_backend.repositories.EnquiryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class EnquiryService {
 
     private final EnquiryRepository enquiryRepository;
+    private final EnquiryEmailService enquiryEmailService;
 
     // Save a customer enquiry
     public Enquiry createEnquiry(Enquiry enquiry) {
@@ -78,7 +84,7 @@ public class EnquiryService {
                         ));
     }
 
-    // Save the admin reply and mark enquiry as replied
+    // Save admin reply and send email to customer
     public Enquiry saveReply(Long id, String reply) {
 
         if (reply == null || reply.isBlank()) {
@@ -89,12 +95,38 @@ public class EnquiryService {
 
         Enquiry enquiry = getEnquiryById(id);
 
-        enquiry.setAdminReply(reply);
+        enquiry.setAdminReply(reply.trim());
         enquiry.setStatus("REPLIED");
         enquiry.setRepliedAt(
                 java.time.LocalDateTime.now()
         );
 
-        return enquiryRepository.save(enquiry);
+        Enquiry savedEnquiry = enquiryRepository.save(enquiry);
+
+        // Send email only after the database transaction commits
+        String customerName = savedEnquiry.getCustomerName();
+        String customerEmail = savedEnquiry.getEmail();
+        String subject = savedEnquiry.getSubject();
+        String originalMessage = savedEnquiry.getMessage();
+        String adminReply = savedEnquiry.getAdminReply();
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+
+                        enquiryEmailService.sendReplyEmail(
+                                customerName,
+                                customerEmail,
+                                subject,
+                                originalMessage,
+                                adminReply
+                        );
+                    }
+                }
+        );
+
+        return savedEnquiry;
     }
 }

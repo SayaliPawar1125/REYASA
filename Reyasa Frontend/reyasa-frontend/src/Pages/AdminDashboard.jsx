@@ -367,7 +367,7 @@ function AdminDashboard() {
                   <tbody>
                     {todayOrders.map((order) => (
                       <tr key={order.id}>
-                        <td className="fw-semibold">#{order.id}</td>
+                        <td className="fw-semibold">ORD{order.id}</td>
 
                         <td>
                           {order.createdAt

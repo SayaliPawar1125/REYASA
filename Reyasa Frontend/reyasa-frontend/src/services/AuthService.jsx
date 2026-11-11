@@ -10,6 +10,11 @@ const AuthService = {
     return api.post("/api/auth/login", loginData);
   },
 
+  // Google login
+  googleLogin: (googleData) => {
+    return api.post("/api/auth/google", googleData);
+  },
+
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
